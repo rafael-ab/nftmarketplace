@@ -42,11 +42,10 @@ contract NFTMarketplace is Initializable, ContextUpgradeable, OwnableUpgradeable
     );
 
     event OfferAccepted(
+        address indexed buyer,
         address indexed seller,
-        address indexed token,
         uint256 indexed tokenId,
         uint256 amount,
-        uint256 deadline,
         uint256 priceUSD
     );
 
