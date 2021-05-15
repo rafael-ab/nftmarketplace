@@ -1,5 +1,6 @@
 const NFTMarketplaceV1 = artifacts.require("NFTMarketplaceV1");
 const Token = artifacts.require("Token");
+const IERC20 = artifacts.require("IERC20");
 const { assert, web3 } = require("hardhat");
 const { expectEvent, expectRevert, time } = require("@openzeppelin/test-helpers");
 
@@ -9,7 +10,8 @@ const LINK_ADDRESS = "0x514910771AF9Ca656af840dff83E8264EcF986CA";
 
 const ADMIN = "0xE92d1A43df510F82C66382592a047d288f85226f";
 const SELLER = "0x73BCEb1Cd57C711feaC4224D062b0F6ff338501e";
-const BUYER = "0x0a4c79cE84202b03e95B7a692E5D728d83C44c76";
+const BUYER_ETH = "0x0a4c79cE84202b03e95B7a692E5D728d83C44c76";
+const BUYER_TOKEN = "0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503";
 const RECIPIENT = "0x9BF4001d307dFd62B26A2F1307ee0C0307632d59";
 
 const toWei = (value, type) => web3.utils.toWei(String(value), type);
@@ -30,7 +32,11 @@ contract("NFTMarketplaceV1", () => {
       });
       await hre.network.provider.request({
         method: "hardhat_impersonateAccount",
-        params: [BUYER],
+        params: [BUYER_ETH],
+      });
+      await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [BUYER_TOKEN],
       });
       await hre.network.provider.request({
         method: "hardhat_impersonateAccount",
@@ -47,13 +53,13 @@ contract("NFTMarketplaceV1", () => {
   });
 
   it("only admin should change fees", async() => {
-    await marketplaceV1.setFee(1000, {from: ADMIN});
+    await marketplaceV1.setFee(100, {from: ADMIN});
     await expectRevert.unspecified(marketplaceV1.setFee(999999));
   })
 
   it("only admin should change recipient", async() => {
-    await marketplaceV1.setFeeRecipient(BUYER, { from: ADMIN });
-    await expectRevert.unspecified(marketplaceV1.setFeeRecipient(BUYER));
+    await marketplaceV1.setFeeRecipient(BUYER_ETH, { from: ADMIN });
+    await expectRevert.unspecified(marketplaceV1.setFeeRecipient(BUYER_ETH));
   })
 
   it("seller should create an offer", async () => {
@@ -125,7 +131,7 @@ contract("NFTMarketplaceV1", () => {
     await token.setApprovalForAll(marketplaceV1.address, true, {from: SELLER});
 
     console.log('SELLER Token 1 Balance :>> ', String(await token.balanceOf(SELLER, 1)));
-    console.log('BUYER Token 1 Balance :>> ', String(await token.balanceOf(BUYER, 1)));
+    console.log('BUYER Token 1 Balance :>> ', String(await token.balanceOf(BUYER_ETH, 1)));
     
     const tx1 = await marketplaceV1.createOffer(
       token.address,
@@ -148,20 +154,116 @@ contract("NFTMarketplaceV1", () => {
     const tx2 = await marketplaceV1.acceptOfferWithETH(
       SELLER,
       1,
-      {from: BUYER, value: toWei(1, "ether")}
+      {from: BUYER_ETH, value: toWei(1, "ether")}
     );
 
     console.log('SELLER Token 1 Balance :>> ', String(await token.balanceOf(SELLER, 1)));
-    console.log('BUYER Token 1 Balance :>> ', String(await token.balanceOf(BUYER, 1)));
+    console.log('BUYER Token 1 Balance :>> ', String(await token.balanceOf(BUYER_ETH, 1)));
     
     console.log("Gas Used :>> ", tx1.receipt.gasUsed + tx2.receipt.gasUsed);
   })
 
   it("should accept an offer using DAI", async() => {
+    const timestamp = await time.latest();
+
+    const token = await Token.new({from: SELLER});
+    await token.mint(SELLER, 1254, 1, 0, {from: SELLER});
+    await token.setApprovalForAll(marketplaceV1.address, true, {from: SELLER});
+
+    console.log('SELLER Token 1254 Balance :>> ', String(await token.balanceOf(SELLER, 1254)));
+    console.log('BUYER Token 1254 Balance :>> ', String(await token.balanceOf(BUYER_TOKEN, 1254)));
     
+    const tx1 = await marketplaceV1.createOffer(
+      token.address,
+      1254,
+      1,
+      timestamp + 1,
+      toWei(2500, "ether"), // DAI and ETH have the same decimals (18)
+      {from: SELLER}
+    );
+
+    await expectEvent(tx1, "OfferCreated", {
+      seller: SELLER,
+      token: token.address,
+      tokenId: toBN(1254),
+      amount: toBN(1),
+      deadline: timestamp + 1,
+      priceUSD: toWei(2500, "ether")
+    });
+
+    // send some funds to pay fees for tx
+    await web3.eth.sendTransaction({
+      from: BUYER_ETH, 
+      to: BUYER_TOKEN,
+      value: toWei(1, "ether")
+    });
+
+    const daiToken = await IERC20.at(DAI_ADDRESS);
+    await daiToken.approve(marketplaceV1.address, toWei(3000, "ether"), { from: BUYER_TOKEN });
+
+    const tx2 = await marketplaceV1.acceptOfferWithTokens(
+      SELLER,
+      1254,
+      toWei(3000, "ether"),
+      DAI_ADDRESS,
+      { from: BUYER_TOKEN }
+    );
+
+    console.log('SELLER Token 1254 Balance :>> ', String(await token.balanceOf(SELLER, 1254)));
+    console.log('BUYER Token 1254 Balance :>> ', String(await token.balanceOf(BUYER_TOKEN, 1254)));
+    
+    console.log("Gas Used :>> ", tx1.receipt.gasUsed + tx2.receipt.gasUsed);
   })
 
   it("should accept an offer using LINK", async() => {
+    const timestamp = await time.latest();
+
+    const token = await Token.new({from: SELLER});
+    await token.mint(SELLER, 12548, 1, 0, {from: SELLER});
+    await token.setApprovalForAll(marketplaceV1.address, true, {from: SELLER});
+
+    console.log('SELLER Token 12548 Balance :>> ', String(await token.balanceOf(SELLER, 12548)));
+    console.log('BUYER Token 12548 Balance :>> ', String(await token.balanceOf(BUYER_TOKEN, 12548)));
     
+    const tx1 = await marketplaceV1.createOffer(
+      token.address,
+      12548,
+      1,
+      timestamp + 1,
+      toWei(2500, "ether"), // LINK and ETH have the same decimals (18)
+      {from: SELLER}
+    );
+
+    await expectEvent(tx1, "OfferCreated", {
+      seller: SELLER,
+      token: token.address,
+      tokenId: toBN(12548),
+      amount: toBN(1),
+      deadline: timestamp + 1,
+      priceUSD: toWei(2500, "ether")
+    });
+
+    // send some funds to pay fees for tx
+    await web3.eth.sendTransaction({
+      from: BUYER_ETH, 
+      to: BUYER_TOKEN,
+      value: toWei(1, "ether")
+    });
+
+    const linkToken = await IERC20.at(LINK_ADDRESS);
+    await linkToken.approve(marketplaceV1.address, toWei(3000, "ether"), { from: BUYER_TOKEN });
+
+    const tx2 = await marketplaceV1.acceptOfferWithTokens(
+      SELLER,
+      12548,
+      toWei(3000, "ether"),
+      LINK_ADDRESS,
+      { from: BUYER_TOKEN }
+    );
+
+    console.log('SELLER Token 12548 Balance :>> ', String(await token.balanceOf(SELLER, 12548)));
+    console.log('BUYER Token 12548 Balance :>> ', String(await token.balanceOf(BUYER_TOKEN, 12548)));
+    
+    console.log("Gas Used :>> ", tx1.receipt.gasUsed + tx2.receipt.gasUsed);
   })
 })
