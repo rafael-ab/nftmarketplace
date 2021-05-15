@@ -6,8 +6,8 @@
  require('@openzeppelin/hardhat-upgrades');
  require("hardhat-gas-reporter");
 
- if (!process.env.ALCHEMY_KEY)
-  throw new Error("ALCHEMY_KEY missing from .env file");
+ if (!process.env.ALCHEMY_MAIN_API_KEY)
+  throw new Error("ALCHEMY_MAIN_API_KEY missing from .env file");
 
 module.exports = {
   networks: {
