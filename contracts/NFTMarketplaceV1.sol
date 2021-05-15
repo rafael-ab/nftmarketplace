@@ -2,23 +2,31 @@
 pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import "./libraries/PriceTokenPairUSD.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
+import "./interfaces/IERC20.sol";
+import "./interfaces/IERC1155.sol";
+import "./interfaces/IWETH.sol";
+import "hardhat/console.sol";
 
 /// @title A NFT Marketplace Contract
 /// @author Rafael Romero
-contract NFTMarketplace is Initializable, ContextUpgradeable, OwnableUpgradeable {
-    using SafeMathUpgradeable for uint256;
+contract NFTMarketplaceV1 is
+    Initializable,
+    ContextUpgradeable,
+    OwnableUpgradeable
+{
+    using SafeMath for uint256;
 
-    address payable public feeRecipient;
     uint256 public fee;
-    mapping(address => bool) private _whitelistedERC20; 
+    address payable public feeRecipient;
+    mapping(address => bool) private _whitelistedERC20;
+    IWETH internal constant weth =
+        IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
-    enum OfferStatus { ONGOING, CANCELLED }
+    enum OfferStatus {ONGOING, CANCELLED}
 
     struct Offer {
         address seller;
@@ -55,12 +63,14 @@ contract NFTMarketplace is Initializable, ContextUpgradeable, OwnableUpgradeable
         uint256 indexed tokenId
     );
 
-    function initialize(
-        address payable _feeRecipient, 
-        uint256 _fee
-    ) external initializer {
+    function initialize(address payable _feeRecipient, uint256 _fee)
+        external
+        initializer
+    {
         require(_feeRecipient != address(0));
         require(_fee > 0);
+        __Context_init();
+        __Ownable_init();
         feeRecipient = _feeRecipient;
         fee = _fee;
     }
@@ -73,10 +83,11 @@ contract NFTMarketplace is Initializable, ContextUpgradeable, OwnableUpgradeable
         uint256 _priceUSD
     ) external {
         require(_token != address(0), "NTFMarketplace: ZERO_ADDRESS");
-        require(
-            offers[_msgSender()][_tokenId].tokenId > 0, 
-            "NFTMarketplace: DUPLICATE_TOKEN"
-        );
+        require(_tokenId > 0, "NTFMarketplace: ID_ERROR");
+        require(_amount > 0, "NFTMarketplace: ZERO_AMOUNT");
+        require(_deadline > block.timestamp, "NFTMarketplace: DEADLINE_ERROR");
+        require(_priceUSD > 0, "NFTMarketplace: ZERO_PRICE_USD");
+
         offers[_msgSender()][_tokenId] = Offer(
             _msgSender(),
             _token,
@@ -86,61 +97,61 @@ contract NFTMarketplace is Initializable, ContextUpgradeable, OwnableUpgradeable
             _priceUSD,
             OfferStatus.ONGOING
         );
-        IERC1155(_token).setApprovalForAll(address(this), true);
         emit OfferCreated(
-            _msgSender(), 
+            _msgSender(),
             _token,
             _tokenId,
-            _amount, 
-            _deadline, 
+            _amount,
+            _deadline,
             _priceUSD
         );
     }
 
-    function acceptOffer(
-        address _seller,
-        uint256 _tokenId,
-        address _tokenPayment
-    ) external payable {
+    function acceptOfferWithETH(address _seller, uint256 _tokenId)
+        external
+        payable
+    {
         require(_seller != address(0), "NTFMarketplace: ZERO_ADDRESS");
         require(_tokenId > 0, "NTFMarketplace: ID_ERROR");
+
         uint256 amount = msg.value;
         require(amount > 0, "NFTMarketplace: ZERO_AMOUNT");
-        require(_whitelistedERC20[_tokenPayment], "NFTMarketplace: TOKEN_NOT_ALLOWED");
 
         Offer memory offer = offers[_seller][_tokenId];
         require(
-            offer.status != OfferStatus.CANCELLED, 
+            offer.status != OfferStatus.CANCELLED,
             "NFTMarketplace: This offer is already cancelled"
         );
 
-        uint256 tokenPrice = _getPriceByToken(_tokenPayment);
-        uint256 finalAmount = offer.priceUSD.div(tokenPrice);
+        uint256 tokenPrice = _getPriceByToken(address(weth));
+        uint256 priceUSD = offer.priceUSD.mul(10**26);
+
+        uint256 finalAmount = priceUSD.div(tokenPrice);
         require(amount >= finalAmount, "NFTMarketplace: INSUFFICIENT_AMOUNT");
+
         uint256 fees = finalAmount.div(fee);
 
-        // transfer tokens to seller
-        IERC20(_tokenPayment).approve(
-            address(this), 
-            finalAmount.sub(fees)
-        );
-        IERC20(_tokenPayment).transferFrom(
-            _msgSender(), 
-            _seller,
-            finalAmount.sub(fees)
-        );
+        // transfer eth to seller
+        weth.deposit{value: amount}();
+        weth.transfer(_seller, finalAmount.sub(fees));
 
         // transfer tokens to buyer
         IERC1155(offer.token).safeTransferFrom(
-            address(this), 
-            _msgSender(), 
-            _tokenId, 
+            _seller,
+            _msgSender(),
+            offer.tokenId,
             offer.amount,
             ""
         );
 
-        _msgSender().transfer(address(this).balance);
-        feeRecipient.transfer(fees);
+        weth.transfer(feeRecipient, fees);
+        weth.transfer(_msgSender(), weth.balanceOf(address(this)));
+
+        //change tokenId owner
+        offers[_msgSender()][_tokenId] = Offer(
+            _msgSender(),
+        );
+        delete offers[offer.seller][_tokenId];
     }
 
     function cancelOffer(uint256 _tokenId) external {
@@ -148,7 +159,7 @@ contract NFTMarketplace is Initializable, ContextUpgradeable, OwnableUpgradeable
 
         Offer memory offer = offers[_msgSender()][_tokenId];
         require(
-            offer.status != OfferStatus.CANCELLED, 
+            offer.status != OfferStatus.CANCELLED,
             "NFTMarketplace: This offer is already cancelled"
         );
 
@@ -164,29 +175,62 @@ contract NFTMarketplace is Initializable, ContextUpgradeable, OwnableUpgradeable
         feeRecipient = _feeRecipient;
     }
 
-    function setWhitelistedPaymentToken(
-        address _paymentToken
-    ) external onlyOwner {
+    function setWhitelistedPaymentToken(address _paymentToken)
+        external
+        onlyOwner
+    {
         _whitelistedERC20[_paymentToken] = true;
     }
 
-    function _getPriceByToken(
-        address _tokenPayment
-    ) internal view returns (uint256) {
-        require(_whitelistedERC20[_tokenPayment], "NFTMarketplace: TOKEN_NOT_ALLOWED");
-        address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    function isWETH(address _token) public pure returns (bool) {
+        return _token == 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    }
+
+    function _getPriceByToken(address _tokenPayment)
+        internal
+        view
+        returns (uint256)
+    {
+        require(
+            _whitelistedERC20[_tokenPayment],
+            "NFTMarketplace: TOKEN_NOT_ALLOWED"
+        );
+
+        AggregatorV3Interface priceETH =
+            AggregatorV3Interface(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
+
+        AggregatorV3Interface priceDAI =
+            AggregatorV3Interface(0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9);
+
+        AggregatorV3Interface priceLINK =
+            AggregatorV3Interface(0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c);
+
         address dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         address link = 0x514910771AF9Ca656af840dff83E8264EcF986CA;
-        uint256 price;
-        if (_tokenPayment == weth) {
-            price = uint256(PriceTokenPairUSD.getETHPrice());
+        uint256 priceUSD;
+        if (_tokenPayment == address(weth)) {
+            (, int256 price, , , ) = priceETH.latestRoundData();
+            priceUSD = uint256(price);
         } else if (_tokenPayment == dai) {
-            price = uint256(PriceTokenPairUSD.getDAIPrice());
+            (, int256 price, , , ) = priceDAI.latestRoundData();
+            priceUSD = uint256(price);
         } else if (_tokenPayment == link) {
-            price = uint256(PriceTokenPairUSD.getLINKPrice());
+            (, int256 price, , , ) = priceLINK.latestRoundData();
+            priceUSD = uint256(price);
         } else {
             revert();
         }
-        return price;
+        return priceUSD;
+    }
+
+    function _checkOfferDeadlineBeforeAccept(Offer storage offer)
+        internal
+        returns (bool)
+    {
+        if (offer.deadline < block.timestamp) {
+            offer.status = OfferStatus.CANCELLED;
+            return false;
+        }
+        return true;
     }
 }
