@@ -107,6 +107,67 @@ contract NFTMarketplaceV1 is
         );
     }
 
+    function acceptOfferWithTokens(
+        address _seller, 
+        uint256 _tokenId,
+        uint256 _amount,
+        address _tokenPayment
+    ) external {
+        require(_seller != address(0), "NTFMarketplace: ZERO_ADDRESS");
+        require(_tokenId > 0, "NTFMarketplace: ID_ERROR");
+        require(_amount > 0, "NFTMarketplace: ZERO_AMOUNT");
+        require(_whitelistedERC20[_tokenPayment], "NFTMarketplace: TOKEN_NOT_ALLOWED");
+
+        Offer memory offer = offers[_seller][_tokenId];
+        require(
+            offer.status != OfferStatus.CANCELLED,
+            "NFTMarketplace: This offer is already cancelled"
+        );
+
+        uint256 tokenPrice = _getPriceByToken(_tokenPayment).mul(10**10);
+        // convert price up to 18 decimals
+        uint256 priceUSD = offer.priceUSD.mul(10**18);
+
+        uint256 finalAmount = priceUSD.div(tokenPrice);
+        require(_amount >= finalAmount, "NFTMarketplace: INSUFFICIENT_AMOUNT");
+
+        uint256 fees = finalAmount.div(fee);
+
+        // transfer tokens to the seller
+        (bool success) = IERC20(_tokenPayment).transferFrom(
+            _msgSender(), 
+            _seller, 
+            finalAmount.sub(fees)
+        );
+        require(success, "NFTMarketplace: ERC20_TRANSACTION_ERROR");
+
+        // transfer tokens to buyer
+        IERC1155(offer.token).safeTransferFrom(
+            _seller,
+            _msgSender(),
+            offer.tokenId,
+            offer.amount,
+            ""
+        );
+
+        IERC20(_tokenPayment).transferFrom(
+            _msgSender(), 
+            feeRecipient, 
+            fees
+        );
+
+        // refund to sender
+        uint256 remainderTokens = IERC20(_tokenPayment).allowance(_seller, address(this));
+        IERC20(_tokenPayment).transferFrom(
+            _msgSender(), 
+            _msgSender(), 
+            remainderTokens
+        );
+
+        // delete offer
+        delete offers[offer.seller][_tokenId];
+    }
+
     function acceptOfferWithETH(address _seller, uint256 _tokenId)
         external
         payable
@@ -143,7 +204,7 @@ contract NFTMarketplaceV1 is
             offer.amount,
             ""
         );
-        
+
         weth.transfer(feeRecipient, fees);
         // refund to sender
         weth.transfer(_msgSender(), weth.balanceOf(address(this)));
