@@ -124,23 +124,20 @@ contract NFTMarketplaceV1 is
             "NFTMarketplace: This offer is already cancelled"
         );
 
+        // the price in USD has 8 decimals, so multiply by 10 ** 10 to get to 18 decimals
         uint256 tokenPrice = _getPriceByToken(_tokenPayment).mul(10**10);
-        // convert price up to 18 decimals
-        uint256 priceUSD = offer.priceUSD.mul(10**18);
-
+        // add 18 twice to maintain precision in the next divisions
+        uint256 priceUSD = offer.priceUSD.mul(10**(18 + 18));
         uint256 finalAmount = priceUSD.div(tokenPrice);
-        require(_amount >= finalAmount, "NFTMarketplace: INSUFFICIENT_AMOUNT");
-
         uint256 fees = finalAmount.div(fee);
 
         // transfer tokens to the seller
-        (bool success) = IERC20(_tokenPayment).transferFrom(
+        IERC20(_tokenPayment).transferFrom(
             _msgSender(), 
             _seller, 
             finalAmount.sub(fees)
         );
-        require(success, "NFTMarketplace: ERC20_TRANSACTION_ERROR");
-
+        
         // transfer tokens to buyer
         IERC1155(offer.token).safeTransferFrom(
             _seller,
@@ -162,6 +159,14 @@ contract NFTMarketplaceV1 is
             _msgSender(), 
             _msgSender(), 
             remainderTokens
+        );
+
+        emit OfferAccepted(
+            _msgSender(),
+            _seller,
+            _tokenId,
+            offer.amount,
+            offer.priceUSD
         );
 
         // delete offer
@@ -209,6 +214,13 @@ contract NFTMarketplaceV1 is
         // refund to sender
         weth.transfer(_msgSender(), weth.balanceOf(address(this)));
 
+        emit OfferAccepted(
+            _msgSender(),
+            _seller,
+            _tokenId,
+            offer.amount,
+            offer.priceUSD
+        );
         // delete offer
         delete offers[offer.seller][_tokenId];
     }

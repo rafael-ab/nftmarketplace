@@ -157,6 +157,14 @@ contract("NFTMarketplaceV1", () => {
       {from: BUYER_ETH, value: toWei(1, "ether")}
     );
 
+    await expectEvent(tx2, "OfferAccepted", {
+      buyer: BUYER_ETH,
+      seller: SELLER,
+      tokenId: toBN(1),
+      amount: toBN(10),
+      priceUSD: toBN(250)
+    });
+
     console.log('SELLER Token 1 Balance :>> ', String(await token.balanceOf(SELLER, 1)));
     console.log('BUYER Token 1 Balance :>> ', String(await token.balanceOf(BUYER_ETH, 1)));
     
@@ -178,7 +186,7 @@ contract("NFTMarketplaceV1", () => {
       1254,
       1,
       timestamp + 1,
-      toWei(2500, "ether"), // DAI and ETH have the same decimals (18)
+      toBN(2500),
       {from: SELLER}
     );
 
@@ -188,7 +196,7 @@ contract("NFTMarketplaceV1", () => {
       tokenId: toBN(1254),
       amount: toBN(1),
       deadline: timestamp + 1,
-      priceUSD: toWei(2500, "ether")
+      priceUSD: toBN(2500)
     });
 
     // send some funds to pay fees for tx
@@ -204,10 +212,18 @@ contract("NFTMarketplaceV1", () => {
     const tx2 = await marketplaceV1.acceptOfferWithTokens(
       SELLER,
       1254,
-      toWei(3000, "ether"),
+      toWei(3000, "ether"), // DAI and ETH have the same decimals (18)
       DAI_ADDRESS,
       { from: BUYER_TOKEN }
     );
+
+    await expectEvent(tx2, "OfferAccepted", {
+      buyer: BUYER_TOKEN,
+      seller: SELLER,
+      tokenId: toBN(1254),
+      amount: toBN(1),
+      priceUSD: toBN(2500)
+    });
 
     console.log('SELLER Token 1254 Balance :>> ', String(await token.balanceOf(SELLER, 1254)));
     console.log('BUYER Token 1254 Balance :>> ', String(await token.balanceOf(BUYER_TOKEN, 1254)));
@@ -230,7 +246,7 @@ contract("NFTMarketplaceV1", () => {
       12548,
       1,
       timestamp + 1,
-      toWei(2500, "ether"), // LINK and ETH have the same decimals (18)
+      2500,
       {from: SELLER}
     );
 
@@ -240,7 +256,7 @@ contract("NFTMarketplaceV1", () => {
       tokenId: toBN(12548),
       amount: toBN(1),
       deadline: timestamp + 1,
-      priceUSD: toWei(2500, "ether")
+      priceUSD: toBN(2500)
     });
 
     // send some funds to pay fees for tx
@@ -251,15 +267,23 @@ contract("NFTMarketplaceV1", () => {
     });
 
     const linkToken = await IERC20.at(LINK_ADDRESS);
-    await linkToken.approve(marketplaceV1.address, toWei(3000, "ether"), { from: BUYER_TOKEN });
+    await linkToken.approve(marketplaceV1.address, toWei(100, "ether"), { from: BUYER_TOKEN });
 
     const tx2 = await marketplaceV1.acceptOfferWithTokens(
       SELLER,
       12548,
-      toWei(3000, "ether"),
+      toWei(100, "ether"), // LINK and ETH have the same decimals (18)
       LINK_ADDRESS,
       { from: BUYER_TOKEN }
     );
+
+    await expectEvent(tx2, "OfferAccepted", {
+      buyer: BUYER_TOKEN,
+      seller: SELLER,
+      tokenId: toBN(12548),
+      amount: toBN(1),
+      priceUSD: toBN(2500)
+    });
 
     console.log('SELLER Token 12548 Balance :>> ', String(await token.balanceOf(SELLER, 12548)));
     console.log('BUYER Token 12548 Balance :>> ', String(await token.balanceOf(BUYER_TOKEN, 12548)));
