@@ -143,14 +143,12 @@ contract NFTMarketplaceV1 is
             offer.amount,
             ""
         );
-
+        
         weth.transfer(feeRecipient, fees);
+        // refund to sender
         weth.transfer(_msgSender(), weth.balanceOf(address(this)));
 
-        //change tokenId owner
-        offers[_msgSender()][_tokenId] = Offer(
-            _msgSender(),
-        );
+        // delete offer
         delete offers[offer.seller][_tokenId];
     }
 
