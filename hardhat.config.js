@@ -3,18 +3,18 @@
  */
  require("dotenv").config();
  require("@nomiclabs/hardhat-truffle5");
-
- require("dotenv").config();
- require("@nomiclabs/hardhat-truffle5");
  require('@openzeppelin/hardhat-upgrades');
  require("hardhat-gas-reporter");
+
+ if (!process.env.ALCHEMY_KEY)
+  throw new Error("ALCHEMY_KEY missing from .env file");
 
 module.exports = {
   networks: {
     hardhat: {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_MAIN_API_KEY}`,
-        //blockNumber: 12404000
+        blockNumber: 12432415
       }
     },
   },
