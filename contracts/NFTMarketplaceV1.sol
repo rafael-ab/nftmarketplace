@@ -343,17 +343,19 @@ contract NFTMarketplaceV1 is
     }
 
     /**
-     * @dev Sets a whitelist of token address for payment with tokens.
+     * @dev Sets a whitelist of ERC-20 tokens for payment.
      *
      * Requirements:
      *
      * - `_paymentToken` cannot be the zero address.
+     * - Only owner can change whether a token is accepted or not.
      */
-    function setWhitelistedPaymentToken(address _paymentToken)
-        external
-        onlyOwner
-    {
-        _whitelistedERC20[_paymentToken] = true;
+    function setWhitelistedPaymentToken(
+        address _paymentToken,
+        bool isAccepted
+    ) external onlyOwner {
+        require(_paymentToken != address(0), "NFTMarketplace: ZERO_ADDRESS");
+        _whitelistedERC20[_paymentToken] = isAccepted;
     }
 
     /**

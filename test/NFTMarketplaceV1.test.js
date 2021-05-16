@@ -47,9 +47,9 @@ contract("NFTMarketplaceV1", () => {
       marketplaceV1.initialize(RECIPIENT, 100, {from: ADMIN});
 
       // set whitelist tokens for payments
-      marketplaceV1.setWhitelistedPaymentToken(WETH_ADDRESS, {from: ADMIN});
-      marketplaceV1.setWhitelistedPaymentToken(DAI_ADDRESS, {from: ADMIN});
-      marketplaceV1.setWhitelistedPaymentToken(LINK_ADDRESS, {from: ADMIN});
+      marketplaceV1.setWhitelistedPaymentToken(WETH_ADDRESS, true, {from: ADMIN});
+      marketplaceV1.setWhitelistedPaymentToken(DAI_ADDRESS, true, {from: ADMIN});
+      marketplaceV1.setWhitelistedPaymentToken(LINK_ADDRESS, true, {from: ADMIN});
   });
 
   it("only admin should change fees", async() => {
