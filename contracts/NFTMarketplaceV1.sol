@@ -11,8 +11,10 @@ import "./interfaces/IERC1155.sol";
 import "./interfaces/IWETH.sol";
 import "hardhat/console.sol";
 
-/// @title A NFT Marketplace Contract
-/// @author Rafael Romero
+/**
+ * @title A NFT Marketplace Contract
+ * @author Rafael Romero
+ */
 contract NFTMarketplaceV1 is
     Initializable,
     ContextUpgradeable,
@@ -20,9 +22,20 @@ contract NFTMarketplaceV1 is
 {
     using SafeMath for uint256;
 
+    /**
+     * @dev Returns the fee amount of each transaction.
+     */
     uint256 public fee;
+
+    /**
+     * @dev Returns the address who is holding the fees.
+     */
     address payable public feeRecipient;
+
+    // mapping approved token addresses
     mapping(address => bool) private _whitelistedERC20;
+
+    // instance of wrapped eth
     IWETH internal constant weth =
         IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
@@ -38,8 +51,13 @@ contract NFTMarketplaceV1 is
         OfferStatus status;
     }
 
+    // mapping from seller addresses to mapping the token id to the offer
     mapping(address => mapping(uint256 => Offer)) public offers;
 
+    /**
+     * @dev Emitted when `seller` creates a new offer of a ERC-1155 `token`
+     * and its `tokenId`.
+     */
     event OfferCreated(
         address indexed seller,
         address indexed token,
@@ -49,6 +67,9 @@ contract NFTMarketplaceV1 is
         uint256 priceUSD
     );
 
+    /**
+     * @dev Emitted when `buyer` accepts the offer of `seller`.
+     */
     event OfferAccepted(
         address indexed buyer,
         address indexed seller,
@@ -57,16 +78,29 @@ contract NFTMarketplaceV1 is
         uint256 priceUSD
     );
 
+    /**
+     * @dev Emitted when `seller` cancels his offer.
+     */
     event OfferCancelled(
         address indexed seller,
         address indexed token,
         uint256 indexed tokenId
     );
 
-    function initialize(address payable _feeRecipient, uint256 _fee)
-        external
-        initializer
-    {
+    /**
+     * @dev Initializes the values for {feeRecipient} and {fee}.
+     *
+     * It is used to make the contract upgradeable.
+     *
+     * Requirements:
+     *
+     * - `_feeRecipient` cannot be the zero address.
+     * - `_fee` must be greater than zero.
+     */
+    function initialize(
+        address payable _feeRecipient,
+        uint256 _fee
+    ) external initializer {
         require(_feeRecipient != address(0));
         require(_fee > 0);
         __Context_init();
@@ -75,6 +109,20 @@ contract NFTMarketplaceV1 is
         fee = _fee;
     }
 
+
+    /**
+     * @dev Creates an offer of an ERC-1155 Token.
+     *
+     * Emits a {OfferCreated} event.
+     *
+     * Requirements:
+     *
+     * - `_token` cannot be the zero address.
+     * - `_tokenId` must be greater than zero.
+     * - `_amount` must be greater than zero.
+     * - `_deadline` must be greater than the current `block.timestamp`.
+     * - `_priceUSD` must be greater than zero.
+     */
     function createOffer(
         address _token,
         uint256 _tokenId,
@@ -107,6 +155,19 @@ contract NFTMarketplaceV1 is
         );
     }
 
+    /**
+     * @dev Accepts an offer of an ERC-1155 Token using ERC-20 Tokens.
+     *
+     * Emits a {OfferAccepted} event.
+     *
+     * Requirements:
+     *
+     * - `_seller` cannot be the zero address.
+     * - `_tokenId` must be greater than zero.
+     * - `_amount` must be greater than zero.
+     * - `_tokenPayment` cannot be the zero address and must be a 
+     * valid ERC-20 Token address.
+     */
     function acceptOfferWithTokens(
         address _seller, 
         uint256 _tokenId,
@@ -173,6 +234,16 @@ contract NFTMarketplaceV1 is
         delete offers[offer.seller][_tokenId];
     }
 
+    /**
+     * @dev Accepts an offer of an ERC-1155 Token using ETH.
+     *
+     * Emits a {OfferAccepted} event.
+     *
+     * Requirements:
+     *
+     * - `_seller` cannot be the zero address.
+     * - `_tokenId` must be greater than zero.
+     */
     function acceptOfferWithETH(address _seller, uint256 _tokenId)
         external
         payable
@@ -225,6 +296,15 @@ contract NFTMarketplaceV1 is
         delete offers[offer.seller][_tokenId];
     }
 
+    /**
+     * @dev Cancels an offer of an ERC-1155 Token.
+     *
+     * Emits a {OfferCancelled} event.
+     *
+     * Requirements:
+     *
+     * - `_tokenId` must be greater than zero.
+     */
     function cancelOffer(uint256 _tokenId) external {
         require(_tokenId > 0, "NFTMarketplace: ID_ERROR");
 
@@ -238,14 +318,37 @@ contract NFTMarketplaceV1 is
         emit OfferCancelled(offer.seller, offer.token, offer.tokenId);
     }
 
+    /**
+     * @dev Sets the fees of each transaction.
+     *
+     * Requirements:
+     *
+     * - `_fee` must be greater than zero.
+     * - Only the owner can change the value of {fee}.
+     */
     function setFee(uint256 _fee) external onlyOwner {
         fee = _fee;
     }
 
+    /**
+     * @dev Sets the address who is hold the fees.
+     *
+     * Requirements:
+     *
+     * - `_feeRecipient` cannot be the zero address.
+     * - Only the owner can change the address of the {feeRecipient}.
+     */
     function setFeeRecipient(address payable _feeRecipient) external onlyOwner {
         feeRecipient = _feeRecipient;
     }
 
+    /**
+     * @dev Sets a whitelist of token address for payment with tokens.
+     *
+     * Requirements:
+     *
+     * - `_paymentToken` cannot be the zero address.
+     */
     function setWhitelistedPaymentToken(address _paymentToken)
         external
         onlyOwner
@@ -257,6 +360,14 @@ contract NFTMarketplaceV1 is
         return _token == 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     }
 
+    /**
+     * @dev Returns the price of a token in USD.
+     *
+     * Requirements:
+     *
+     * - `_tokenPayment` cannot be the zero address and address must be
+     * in the whitelist of ERC-20 Tokens.
+     */
     function _getPriceByToken(address _tokenPayment)
         internal
         view
