@@ -99,10 +99,10 @@ contract NFTMarketplaceV1 is
      * - `_feeRecipient` cannot be the zero address.
      * - `_fee` must be greater than zero.
      */
-    function initialize(
-        address payable _feeRecipient,
-        uint256 _fee
-    ) external initializer {
+    function initialize(address payable _feeRecipient, uint256 _fee)
+        external
+        initializer
+    {
         require(_feeRecipient != address(0));
         require(_fee > 0);
         __Context_init();
@@ -110,7 +110,6 @@ contract NFTMarketplaceV1 is
         feeRecipient = _feeRecipient;
         fee = _fee;
     }
-
 
     /**
      * @dev Creates an offer of an ERC-1155 Token.
@@ -167,11 +166,11 @@ contract NFTMarketplaceV1 is
      * - `_seller` cannot be the zero address.
      * - `_tokenId` must be greater than zero.
      * - `_amount` must be greater than zero.
-     * - `_tokenPayment` cannot be the zero address and must be a 
+     * - `_tokenPayment` cannot be the zero address and must be a
      * valid ERC-20 Token address.
      */
     function acceptOfferWithTokens(
-        address _seller, 
+        address _seller,
         uint256 _tokenId,
         uint256 _amount,
         address _tokenPayment
@@ -179,7 +178,10 @@ contract NFTMarketplaceV1 is
         require(_seller != address(0), "NTFMarketplace: ZERO_ADDRESS");
         require(_tokenId > 0, "NTFMarketplace: ID_ERROR");
         require(_amount > 0, "NFTMarketplace: ZERO_AMOUNT");
-        require(_whitelistedERC20[_tokenPayment], "NFTMarketplace: TOKEN_NOT_ALLOWED");
+        require(
+            _whitelistedERC20[_tokenPayment],
+            "NFTMarketplace: TOKEN_NOT_ALLOWED"
+        );
 
         Offer memory offer = offers[_seller][_tokenId];
         if (offer.deadline < block.timestamp) {
@@ -198,22 +200,23 @@ contract NFTMarketplaceV1 is
         uint256 fees = finalAmount.div(fee);
 
         require(
-            IERC20(_tokenPayment).allowance(_msgSender(), address(this)) >= finalAmount,
+            IERC20(_tokenPayment).allowance(_msgSender(), address(this)) >=
+                finalAmount,
             "NTFMarketplace: INSUFFICIENT_ALLOWANCE"
         );
 
         // transfer tokens to the seller
         IERC20(_tokenPayment).transferFrom(
-            _msgSender(), 
-            _seller, 
+            _msgSender(),
+            _seller,
             finalAmount.sub(fees)
         );
-        
+
         require(
             IERC1155(offer.token).isApprovedForAll(_seller, address(this)),
             "NTFMarketplace: NOT_APPROVAL"
         );
-        
+
         // transfer tokens to buyer
         IERC1155(offer.token).safeTransferFrom(
             _seller,
@@ -223,17 +226,14 @@ contract NFTMarketplaceV1 is
             ""
         );
 
-        IERC20(_tokenPayment).transferFrom(
-            _msgSender(), 
-            feeRecipient, 
-            fees
-        );
+        IERC20(_tokenPayment).transferFrom(_msgSender(), feeRecipient, fees);
 
         // refund to sender
-        uint256 remainderTokens = IERC20(_tokenPayment).allowance(_seller, address(this));
+        uint256 remainderTokens =
+            IERC20(_tokenPayment).allowance(_seller, address(this));
         IERC20(_tokenPayment).transferFrom(
-            _msgSender(), 
-            _msgSender(), 
+            _msgSender(),
+            _msgSender(),
             remainderTokens
         );
 
@@ -374,10 +374,10 @@ contract NFTMarketplaceV1 is
      * - `_paymentToken` cannot be the zero address.
      * - Only owner can change whether a token is accepted or not.
      */
-    function setWhitelistedPaymentToken(
-        address _paymentToken,
-        bool isAccepted
-    ) external onlyOwner {
+    function setWhitelistedPaymentToken(address _paymentToken, bool isAccepted)
+        external
+        onlyOwner
+    {
         require(_paymentToken != address(0), "NFTMarketplace: ZERO_ADDRESS");
         _whitelistedERC20[_paymentToken] = isAccepted;
     }
@@ -400,30 +400,32 @@ contract NFTMarketplaceV1 is
             "NFTMarketplace: TOKEN_NOT_ALLOWED"
         );
 
-        AggregatorV3Interface priceETH =
-            AggregatorV3Interface(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);
-
-        AggregatorV3Interface priceDAI =
-            AggregatorV3Interface(0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9);
-
-        AggregatorV3Interface priceLINK =
-            AggregatorV3Interface(0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c);
-
         address dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
         address link = 0x514910771AF9Ca656af840dff83E8264EcF986CA;
         uint256 priceUSD;
         if (_tokenPayment == address(weth)) {
+            AggregatorV3Interface priceETH =
+                AggregatorV3Interface(
+                    0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
+                );
             (, int256 price, , , ) = priceETH.latestRoundData();
             priceUSD = uint256(price);
         } else if (_tokenPayment == dai) {
+            AggregatorV3Interface priceDAI =
+                AggregatorV3Interface(
+                    0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9
+                );
             (, int256 price, , , ) = priceDAI.latestRoundData();
             priceUSD = uint256(price);
         } else if (_tokenPayment == link) {
+            AggregatorV3Interface priceLINK =
+                AggregatorV3Interface(
+                    0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c
+                );
             (, int256 price, , , ) = priceLINK.latestRoundData();
             priceUSD = uint256(price);
-        } else {
-            revert();
         }
+
         return priceUSD;
     }
 }
