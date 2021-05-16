@@ -192,11 +192,21 @@ contract NFTMarketplaceV1 is
         uint256 finalAmount = priceUSD.div(tokenPrice);
         uint256 fees = finalAmount.div(fee);
 
+        require(
+            IERC20(_tokenPayment).allowance(_msgSender(), address(this)) >= finalAmount,
+            "NTFMarketplace: INSUFFICIENT_ALLOWANCE"
+        );
+
         // transfer tokens to the seller
         IERC20(_tokenPayment).transferFrom(
             _msgSender(), 
             _seller, 
             finalAmount.sub(fees)
+        );
+        
+        require(
+            IERC1155(offer.token).isApprovedForAll(_seller, address(this)),
+            "NTFMarketplace: NOT_APPROVAL"
         );
         
         // transfer tokens to buyer
@@ -272,6 +282,10 @@ contract NFTMarketplaceV1 is
         weth.deposit{value: amount}();
         weth.transfer(_seller, finalAmount.sub(fees));
 
+        require(
+            IERC1155(offer.token).isApprovedForAll(_seller, address(this)),
+            "NTFMarketplace: NOT_APPROVAL"
+        );
         // transfer tokens to buyer
         IERC1155(offer.token).safeTransferFrom(
             _seller,
