@@ -272,8 +272,10 @@ contract NFTMarketplaceV1 is
             "NFTMarketplace: This offer is already cancelled"
         );
 
-        uint256 tokenPrice = _getPriceByToken(address(weth));
-        uint256 priceUSD = offer.priceUSD.mul(10**26);
+        // the price in USD has 8 decimals, so multiply by 10 ** 10 to get to 18 decimals
+        uint256 tokenPrice = _getPriceByToken(address(weth)).mul(10**10);
+        // add 18 twice to maintain precision in the next divide
+        uint256 priceUSD = offer.priceUSD.mul(10**(18 + 18));
 
         uint256 finalAmount = priceUSD.div(tokenPrice);
         require(amount >= finalAmount, "NFTMarketplace: INSUFFICIENT_AMOUNT");
