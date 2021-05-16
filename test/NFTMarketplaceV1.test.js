@@ -290,4 +290,64 @@ contract("NFTMarketplaceV1", () => {
     
     console.log("Gas Used :>> ", tx1.receipt.gasUsed + tx2.receipt.gasUsed);
   })
+
+  it("should fail when ERC-1155 token is not approved", async () => {
+    const timestamp = await time.latest();
+
+    const token = await Token.new({from: SELLER});
+    await token.mint(SELLER, 1, 10, 0, {from: SELLER});
+    // await token.setApprovalForAll(marketplaceV1.address, true, {from: SELLER});
+    
+    await marketplaceV1.createOffer(
+      token.address,
+      1,
+      10,
+      timestamp + 1,
+      250,
+      {from: SELLER}
+    );
+
+    expectRevert.unspecified(marketplaceV1.acceptOfferWithETH(
+      SELLER,
+      1,
+      {from: BUYER_ETH, value: toWei(1, "ether")}
+    ));
+  });
+
+  it("should fail when ERC-20 token is not approved for payment", async () => {
+    const timestamp = await time.latest();
+
+    const token = await Token.new({from: SELLER});
+    await token.mint(SELLER, 12548, 1, 0, {from: SELLER});
+    await token.setApprovalForAll(marketplaceV1.address, true, {from: SELLER});
+    
+    await marketplaceV1.createOffer(
+      token.address,
+      12548,
+      1,
+      timestamp + 1,
+      2500,
+      {from: SELLER}
+    );
+
+    // send some funds to pay fees for tx
+    await web3.eth.sendTransaction({
+      from: BUYER_ETH, 
+      to: BUYER_TOKEN,
+      value: toWei(1, "ether")
+    });
+
+    const linkToken = await IERC20.at(LINK_ADDRESS);
+    // await linkToken.approve(marketplaceV1.address, toWei(100, "ether"), { from: BUYER_TOKEN });
+
+    await expectRevert.unspecified(
+      marketplaceV1.acceptOfferWithTokens(
+        SELLER,
+        12548,
+        toWei(100, "ether"), // LINK and ETH have the same decimals (18)
+        LINK_ADDRESS,
+        { from: BUYER_TOKEN }
+      )
+    );
+  });
 })
