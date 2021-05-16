@@ -356,10 +356,6 @@ contract NFTMarketplaceV1 is
         _whitelistedERC20[_paymentToken] = true;
     }
 
-    function isWETH(address _token) public pure returns (bool) {
-        return _token == 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    }
-
     /**
      * @dev Returns the price of a token in USD.
      *
