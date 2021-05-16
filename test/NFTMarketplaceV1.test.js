@@ -307,11 +307,14 @@ contract("NFTMarketplaceV1", () => {
       {from: SELLER}
     );
 
-    expectRevert.unspecified(marketplaceV1.acceptOfferWithETH(
-      SELLER,
-      1,
-      {from: BUYER_ETH, value: toWei(1, "ether")}
-    ));
+    expectRevert(
+      marketplaceV1.acceptOfferWithETH(
+        SELLER,
+        1,
+        {from: BUYER_ETH, value: toWei(1, "ether")}
+      ),
+      "NTFMarketplace: NOT_APPROVAL"
+    );
   });
 
   it("should fail when ERC-20 token is not approved for payment", async () => {
@@ -337,17 +340,18 @@ contract("NFTMarketplaceV1", () => {
       value: toWei(1, "ether")
     });
 
-    const linkToken = await IERC20.at(LINK_ADDRESS);
+    // const linkToken = await IERC20.at(LINK_ADDRESS);
     // await linkToken.approve(marketplaceV1.address, toWei(100, "ether"), { from: BUYER_TOKEN });
 
-    await expectRevert.unspecified(
+    await expectRevert(
       marketplaceV1.acceptOfferWithTokens(
         SELLER,
         12548,
         toWei(100, "ether"), // LINK and ETH have the same decimals (18)
         LINK_ADDRESS,
         { from: BUYER_TOKEN }
-      )
+      ),
+      "NTFMarketplace: INSUFFICIENT_ALLOWANCE"
     );
   });
 })
