@@ -182,6 +182,9 @@ contract NFTMarketplaceV1 is
         require(_whitelistedERC20[_tokenPayment], "NFTMarketplace: TOKEN_NOT_ALLOWED");
 
         Offer memory offer = offers[_seller][_tokenId];
+        if (offer.deadline < block.timestamp) {
+            offer.status = OfferStatus.CANCELLED;
+        }
         require(
             offer.status != OfferStatus.CANCELLED,
             "NFTMarketplace: This offer is already cancelled"
@@ -267,6 +270,9 @@ contract NFTMarketplaceV1 is
         require(amount > 0, "NFTMarketplace: ZERO_AMOUNT");
 
         Offer memory offer = offers[_seller][_tokenId];
+        if (offer.deadline < block.timestamp) {
+            offer.status = OfferStatus.CANCELLED;
+        }
         require(
             offer.status != OfferStatus.CANCELLED,
             "NFTMarketplace: This offer is already cancelled"
@@ -419,16 +425,5 @@ contract NFTMarketplaceV1 is
             revert();
         }
         return priceUSD;
-    }
-
-    function _checkOfferDeadlineBeforeAccept(Offer storage offer)
-        internal
-        returns (bool)
-    {
-        if (offer.deadline < block.timestamp) {
-            offer.status = OfferStatus.CANCELLED;
-            return false;
-        }
-        return true;
     }
 }
