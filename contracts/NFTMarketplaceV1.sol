@@ -187,7 +187,7 @@ contract NFTMarketplaceV1 is
 
         // the price in USD has 8 decimals, so multiply by 10 ** 10 to get to 18 decimals
         uint256 tokenPrice = _getPriceByToken(_tokenPayment).mul(10**10);
-        // add 18 twice to maintain precision in the next divisions
+        // add 18 twice to maintain precision in the next divide
         uint256 priceUSD = offer.priceUSD.mul(10**(18 + 18));
         uint256 finalAmount = priceUSD.div(tokenPrice);
         uint256 fees = finalAmount.div(fee);
