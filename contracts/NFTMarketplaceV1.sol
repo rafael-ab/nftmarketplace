@@ -23,7 +23,7 @@ contract NFTMarketplaceV1 is
     using SafeMath for uint256;
 
     /**
-     * @dev Returns the fee amount of each transaction.
+     * @dev Returns the fee value that is taken from each transaction.
      */
     uint256 public fee;
 
@@ -32,7 +32,7 @@ contract NFTMarketplaceV1 is
      */
     address payable public feeRecipient;
 
-    // mapping approved token addresses
+    // mapping of approved tokens for payment
     mapping(address => bool) private _whitelistedERC20;
 
     // instance of wrapped eth
@@ -51,7 +51,9 @@ contract NFTMarketplaceV1 is
         OfferStatus status;
     }
 
-    // mapping from seller addresses to mapping the token id to the offer
+    /**
+     * @dev Returns the offer of a seller given a tokenId.
+     */
     mapping(address => mapping(uint256 => Offer)) public offers;
 
     /**
