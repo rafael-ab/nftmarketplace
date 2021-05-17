@@ -37,7 +37,7 @@ contract NFTMarketplaceV1 is
     // mapping of token address for chainlink usd-token address
     mapping(address => address) private _chainlinkUSDToken;
 
-    enum OfferStatus {ONGOING, CANCELLED}
+    enum OfferStatus {ONGOING, ACCEPTED, CANCELLED}
 
     struct Offer {
         address seller;
@@ -181,13 +181,13 @@ contract NFTMarketplaceV1 is
             "NFTMarketplace: TOKEN_NOT_ALLOWED"
         );
 
-        Offer memory offer = offers[_seller][_tokenId];
+        Offer storage offer = offers[_seller][_tokenId];
         if (offer.deadline < block.timestamp) {
             offer.status = OfferStatus.CANCELLED;
         }
         require(
-            offer.status != OfferStatus.CANCELLED,
-            "NFTMarketplace: This offer is already cancelled"
+            offer.status == OfferStatus.ONGOING,
+            "NFTMarketplace: This offer is already cancelled or accepted"
         );
 
         // the price in USD has 8 decimals, so multiply by 10 ** 10 to get to 18 decimals
@@ -235,6 +235,7 @@ contract NFTMarketplaceV1 is
             remainderTokens
         );
 
+        offer.status = OfferStatus.ACCEPTED;
         emit OfferAccepted(
             _msgSender(),
             _seller,
@@ -242,9 +243,6 @@ contract NFTMarketplaceV1 is
             offer.amount,
             offer.priceUSD
         );
-
-        // delete offer
-        delete offers[offer.seller][_tokenId];
     }
 
     /**
@@ -267,13 +265,13 @@ contract NFTMarketplaceV1 is
         uint256 amount = msg.value;
         require(amount > 0, "NFTMarketplace: ZERO_AMOUNT");
 
-        Offer memory offer = offers[_seller][_tokenId];
+        Offer storage offer = offers[_seller][_tokenId];
         if (offer.deadline < block.timestamp) {
             offer.status = OfferStatus.CANCELLED;
         }
         require(
-            offer.status != OfferStatus.CANCELLED,
-            "NFTMarketplace: This offer is already cancelled"
+            offer.status == OfferStatus.ONGOING,
+            "NFTMarketplace: This offer is already cancelled or accepted"
         );
 
         address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -309,6 +307,7 @@ contract NFTMarketplaceV1 is
         // refund to sender
         payable(_msgSender()).transfer(address(this).balance);
 
+        offer.status = OfferStatus.ACCEPTED;
         emit OfferAccepted(
             _msgSender(),
             _seller,
@@ -316,9 +315,6 @@ contract NFTMarketplaceV1 is
             offer.amount,
             offer.priceUSD
         );
-        // delete offer
-        //delete offers[offer.seller][_tokenId];
-        offer.status = OfferStatus.CANCELLED;
     }
 
     /**
