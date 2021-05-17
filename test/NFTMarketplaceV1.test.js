@@ -4,15 +4,22 @@ const IERC20 = artifacts.require("IERC20");
 const { assert, web3 } = require("hardhat");
 const { expectEvent, expectRevert, time } = require("@openzeppelin/test-helpers");
 
+// Token Address
 const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 const LINK_ADDRESS = "0x514910771AF9Ca656af840dff83E8264EcF986CA";
 
+// Account Address
 const ADMIN = "0xE92d1A43df510F82C66382592a047d288f85226f";
 const SELLER = "0x73BCEb1Cd57C711feaC4224D062b0F6ff338501e";
 const BUYER_ETH = "0x0a4c79cE84202b03e95B7a692E5D728d83C44c76";
 const BUYER_TOKEN = "0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503";
 const RECIPIENT = "0x9BF4001d307dFd62B26A2F1307ee0C0307632d59";
+
+// Chainlink Address
+const USD_ETH_ADDRESS = "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419";
+const USD_DAI_ADDRESS = "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9";
+const USD_LINK_ADDRESS = "0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c";
 
 const toWei = (value, type) => web3.utils.toWei(String(value), type);
 const fromWei = (value, type) => Number(web3.utils.fromWei(String(value), type));
@@ -48,8 +55,13 @@ contract("NFTMarketplaceV1", () => {
 
       // set whitelist tokens for payments
       marketplaceV1.setWhitelistedPaymentToken(WETH_ADDRESS, true, {from: ADMIN});
+      marketplaceV1.setChainlinkUSDToken(WETH_ADDRESS, USD_ETH_ADDRESS, {from: ADMIN});
+
       marketplaceV1.setWhitelistedPaymentToken(DAI_ADDRESS, true, {from: ADMIN});
+      marketplaceV1.setChainlinkUSDToken(DAI_ADDRESS, USD_DAI_ADDRESS, {from: ADMIN});
+
       marketplaceV1.setWhitelistedPaymentToken(LINK_ADDRESS, true, {from: ADMIN});
+      marketplaceV1.setChainlinkUSDToken(LINK_ADDRESS, USD_LINK_ADDRESS, {from: ADMIN});
   });
 
   it("only admin should change fees", async() => {
