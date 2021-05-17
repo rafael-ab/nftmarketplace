@@ -5,9 +5,9 @@ import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
+import "./interfaces/IERC20.sol";
 import "hardhat/console.sol";
 
 /**
@@ -190,10 +190,26 @@ contract NFTMarketplaceV1 is
             "NFTMarketplace: This offer is already cancelled or accepted"
         );
 
-        // the price in USD has 8 decimals, so multiply by 10 ** 10 to get to 18 decimals
-        uint256 tokenPrice = _getPriceByToken(_tokenPayment).mul(10**10);
-        // add 18 twice to maintain precision in the next divide
-        uint256 priceUSD = offer.priceUSD.mul(10**(18 + 18));
+        uint256 tokenPrice;
+        uint256 tokenDecimals = IERC20(_tokenPayment).decimals();
+        
+        if (tokenDecimals > 8) {
+            // the price in USD has 8 decimals,
+            // so we calculate the decimals with 10 ** (tokenDecimals - 8)
+            // to get to 18 decimals
+            tokenPrice = _getPriceByToken(_tokenPayment).mul(10**(tokenDecimals.sub(8)));
+        } else {
+            // the price in USD has 8 decimals,
+            // so we need to get the same decimals that tokenDecimals
+            // we calculate that with 8 - tokenDecimals
+            uint256 usdDecimals = 8;
+            uint256 priceDivider = 10 ** (usdDecimals.sub(tokenDecimals));
+            // and divide the token price by that amount
+            tokenPrice = _getPriceByToken(_tokenPayment).div(priceDivider);
+        }
+        // multiply tokenDecimals by 2 to maintain precision in the next divide
+        uint256 priceUSD = offer.priceUSD.mul(10**(tokenDecimals * 2));
+
         uint256 finalAmount = priceUSD.div(tokenPrice);
         uint256 fees = finalAmount.div(fee);
 
