@@ -317,7 +317,8 @@ contract NFTMarketplaceV1 is
             offer.priceUSD
         );
         // delete offer
-        delete offers[offer.seller][_tokenId];
+        //delete offers[offer.seller][_tokenId];
+        offer.status = OfferStatus.CANCELLED;
     }
 
     /**
@@ -332,7 +333,7 @@ contract NFTMarketplaceV1 is
     function cancelOffer(uint256 _tokenId) external {
         require(_tokenId > 0, "NFTMarketplace: ID_ERROR");
 
-        Offer memory offer = offers[_msgSender()][_tokenId];
+        Offer storage offer = offers[_msgSender()][_tokenId];
         require(
             offer.status != OfferStatus.CANCELLED,
             "NFTMarketplace: This offer is already cancelled"
