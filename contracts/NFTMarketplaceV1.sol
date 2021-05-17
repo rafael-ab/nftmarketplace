@@ -226,15 +226,6 @@ contract NFTMarketplaceV1 is
 
         IERC20(_tokenPayment).transferFrom(_msgSender(), feeRecipient, fees);
 
-        // refund to sender
-        uint256 remainderTokens =
-            IERC20(_tokenPayment).allowance(_seller, address(this));
-        IERC20(_tokenPayment).transferFrom(
-            _msgSender(),
-            _msgSender(),
-            remainderTokens
-        );
-
         offer.status = OfferStatus.ACCEPTED;
         emit OfferAccepted(
             _msgSender(),
