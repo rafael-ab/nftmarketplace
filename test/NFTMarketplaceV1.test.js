@@ -475,4 +475,90 @@ contract("NFTMarketplaceV1", () => {
       "NFTMarketplace: This offer is already cancelled or accepted"
     );
   });
+
+  it("should support accept an offer using USDC, ERC20 with 6 decimals", async () => {
+    const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+    const USD_USDC_ADDRESS = "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6";
+
+    marketplaceV1.setWhitelistedPaymentToken(USDC_ADDRESS, true, {
+      from: ADMIN,
+    });
+    marketplaceV1.setChainlinkUSDToken(USDC_ADDRESS, USD_USDC_ADDRESS, {
+      from: ADMIN,
+    });
+
+    const timestamp = await time.latest();
+
+    const token = await Token.new({ from: SELLER });
+    await token.mint(SELLER, 22, 1, 0, { from: SELLER });
+    await token.setApprovalForAll(marketplaceV1.address, true, {
+      from: SELLER,
+    });
+
+    console.log(
+      "SELLER Token 22 Balance :>> ",
+      String(await token.balanceOf(SELLER, 22))
+    );
+    console.log(
+      "BUYER Token 22 Balance :>> ",
+      String(await token.balanceOf(BUYER_TOKEN, 22))
+    );
+
+    const tx1 = await marketplaceV1.createOffer(
+      token.address,
+      22,
+      1,
+      timestamp + 1,
+      2500,
+      { from: SELLER }
+    );
+
+    await expectEvent(tx1, "OfferCreated", {
+      seller: SELLER,
+      token: token.address,
+      tokenId: toBN(22),
+      amount: toBN(1),
+      deadline: timestamp + 1,
+      priceUSD: toBN(2500),
+    });
+
+    // send some funds to pay fees for tx
+    await web3.eth.sendTransaction({
+      from: BUYER_ETH,
+      to: BUYER_TOKEN,
+      value: toWei(1, "ether"),
+    });
+
+    const usdcToken = await IERC20.at(USDC_ADDRESS);
+    await usdcToken.approve(marketplaceV1.address, 3000 * 10 ** 6, {
+      from: BUYER_TOKEN,
+    });
+
+    const tx2 = await marketplaceV1.acceptOfferWithTokens(
+      SELLER,
+      22,
+      3000 * 10 ** 6, // USDC and ETH have different decimals (6 and 18)
+      USDC_ADDRESS,
+      { from: BUYER_TOKEN }
+    );
+
+    await expectEvent(tx2, "OfferAccepted", {
+      buyer: BUYER_TOKEN,
+      seller: SELLER,
+      tokenId: toBN(22),
+      amount: toBN(1),
+      priceUSD: toBN(2500),
+    });
+
+    console.log(
+      "SELLER Token 22 Balance :>> ",
+      String(await token.balanceOf(SELLER, 22))
+    );
+    console.log(
+      "BUYER Token 22 Balance :>> ",
+      String(await token.balanceOf(BUYER_TOKEN, 22))
+    );
+
+    console.log("Gas Used :>> ", tx1.receipt.gasUsed + tx2.receipt.gasUsed);
+  });
 });
