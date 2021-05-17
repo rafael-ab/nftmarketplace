@@ -277,7 +277,7 @@ contract NFTMarketplaceV1 is
             "NFTMarketplace: This offer is already cancelled"
         );
 
-        address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc;
+        address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
         // the price in USD has 8 decimals, so multiply by 10 ** 10 to get to 18 decimals
         uint256 tokenPrice = _getPriceByToken(weth).mul(10**10);
