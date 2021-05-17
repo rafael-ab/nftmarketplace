@@ -38,10 +38,6 @@ contract NFTMarketplaceV1 is
     // mapping of token address for chainlink usd-token address
     mapping(address => address) private _chainlinkUSDToken;
 
-    // instance of wrapped eth
-    IWETH internal constant weth =
-        IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
-
     enum OfferStatus {ONGOING, CANCELLED}
 
     struct Offer {
@@ -281,8 +277,10 @@ contract NFTMarketplaceV1 is
             "NFTMarketplace: This offer is already cancelled"
         );
 
+        address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc;
+
         // the price in USD has 8 decimals, so multiply by 10 ** 10 to get to 18 decimals
-        uint256 tokenPrice = _getPriceByToken(address(weth)).mul(10**10);
+        uint256 tokenPrice = _getPriceByToken(weth).mul(10**10);
         // add 18 twice to maintain precision in the next divide
         uint256 priceUSD = offer.priceUSD.mul(10**(18 + 18));
 
