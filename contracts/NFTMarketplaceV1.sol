@@ -289,8 +289,7 @@ contract NFTMarketplaceV1 is
         uint256 fees = finalAmount.div(fee);
 
         // transfer eth to seller
-        weth.deposit{value: amount}();
-        weth.transfer(_seller, finalAmount.sub(fees));
+        payable(_seller).transfer(finalAmount.sub(fees));
 
         require(
             IERC1155(offer.token).isApprovedForAll(_seller, address(this)),
@@ -305,9 +304,10 @@ contract NFTMarketplaceV1 is
             ""
         );
 
-        weth.transfer(feeRecipient, fees);
+        //send fees to the recipient
+        payable(feeRecipient).transfer(fees);
         // refund to sender
-        weth.transfer(_msgSender(), weth.balanceOf(address(this)));
+        payable(_msgSender()).transfer(address(this).balance);
 
         emit OfferAccepted(
             _msgSender(),
