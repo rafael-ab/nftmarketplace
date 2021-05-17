@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/IERC1155.sol";
-import "./interfaces/IWETH.sol";
 import "hardhat/console.sol";
 
 /**
