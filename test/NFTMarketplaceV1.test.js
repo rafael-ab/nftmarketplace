@@ -157,7 +157,7 @@ contract("NFTMarketplaceV1", () => {
     const timestamp = await time.latest();
 
     const token = await Token1155.new({ from: SELLER });
-    await token.mint(SELLER, 1, 1, 0, { from: SELLER });
+    await token.mint(SELLER, 1, 10, 0, { from: SELLER });
     await token.setApprovalForAll(marketplaceV1.address, true, {
       from: SELLER,
     });
@@ -174,7 +174,7 @@ contract("NFTMarketplaceV1", () => {
     const tx1 = await marketplaceV1.createOffer(
       token.address,
       1,
-      1,
+      10,
       timestamp + 1,
       250,
       { from: SELLER }
@@ -184,7 +184,7 @@ contract("NFTMarketplaceV1", () => {
       seller: SELLER,
       token: token.address,
       tokenId: toBN(1),
-      amount: toBN(1),
+      amount: toBN(10),
       deadline: timestamp + 1,
       priceUSD: toBN(250),
     });
@@ -198,7 +198,7 @@ contract("NFTMarketplaceV1", () => {
       buyer: BUYER_ETH,
       seller: SELLER,
       tokenId: toBN(1),
-      amount: toBN(1),
+      amount: toBN(10),
       priceUSD: toBN(250),
     });
 
