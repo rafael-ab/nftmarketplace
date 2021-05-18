@@ -1,5 +1,5 @@
 const NFTMarketplaceV1 = artifacts.require("NFTMarketplaceV1");
-const Token = artifacts.require("Token");
+const Token1155 = artifacts.require("Token1155");
 const IERC20 = artifacts.require("IERC20");
 const { assert, web3 } = require("hardhat");
 const {
@@ -94,7 +94,7 @@ contract("NFTMarketplaceV1", () => {
   it("seller should create an offer", async () => {
     const timestamp = await time.latest();
 
-    const token = await Token.new({ from: SELLER });
+    const token = await Token1155.new({ from: SELLER });
     await token.setApprovalForAll(marketplaceV1.address, true, {
       from: SELLER,
     });
@@ -123,7 +123,7 @@ contract("NFTMarketplaceV1", () => {
   it("seller should cancel an offer", async () => {
     const timestamp = await time.latest();
 
-    const token = await Token.new({ from: SELLER });
+    const token = await Token1155.new({ from: SELLER });
 
     const tx1 = await marketplaceV1.createOffer(
       token.address,
@@ -156,7 +156,7 @@ contract("NFTMarketplaceV1", () => {
   it("should accept an offer using ETH", async () => {
     const timestamp = await time.latest();
 
-    const token = await Token.new({ from: SELLER });
+    const token = await Token1155.new({ from: SELLER });
     await token.mint(SELLER, 1, 1, 0, { from: SELLER });
     await token.setApprovalForAll(marketplaceV1.address, true, {
       from: SELLER,
@@ -217,7 +217,7 @@ contract("NFTMarketplaceV1", () => {
   it("should accept an offer using DAI", async () => {
     const timestamp = await time.latest();
 
-    const token = await Token.new({ from: SELLER });
+    const token = await Token1155.new({ from: SELLER });
     await token.mint(SELLER, 1254, 1, 0, { from: SELLER });
     await token.setApprovalForAll(marketplaceV1.address, true, {
       from: SELLER,
@@ -293,7 +293,7 @@ contract("NFTMarketplaceV1", () => {
   it("should accept an offer using LINK", async () => {
     const timestamp = await time.latest();
 
-    const token = await Token.new({ from: SELLER });
+    const token = await Token1155.new({ from: SELLER });
     await token.mint(SELLER, 12548, 1, 0, { from: SELLER });
     await token.setApprovalForAll(marketplaceV1.address, true, {
       from: SELLER,
@@ -369,7 +369,7 @@ contract("NFTMarketplaceV1", () => {
   it("should fail when ERC-1155 token is not approved", async () => {
     const timestamp = await time.latest();
 
-    const token = await Token.new({ from: SELLER });
+    const token = await Token1155.new({ from: SELLER });
     await token.mint(SELLER, 1, 1, 0, { from: SELLER });
     // await token.setApprovalForAll(marketplaceV1.address, true, {from: SELLER});
 
@@ -389,7 +389,7 @@ contract("NFTMarketplaceV1", () => {
   it("should fail when ERC-20 token is not approved for payment", async () => {
     const timestamp = await time.latest();
 
-    const token = await Token.new({ from: SELLER });
+    const token = await Token1155.new({ from: SELLER });
     await token.mint(SELLER, 12548, 1, 0, { from: SELLER });
     await token.setApprovalForAll(marketplaceV1.address, true, {
       from: SELLER,
@@ -429,7 +429,7 @@ contract("NFTMarketplaceV1", () => {
   it("should fail if tries to accept the same offer twice", async () => {
     const timestamp = await time.latest();
 
-    const token = await Token.new({ from: SELLER });
+    const token = await Token1155.new({ from: SELLER });
     await token.mint(SELLER, 12548, 1, 0, { from: SELLER });
     await token.setApprovalForAll(marketplaceV1.address, true, {
       from: SELLER,
@@ -489,7 +489,7 @@ contract("NFTMarketplaceV1", () => {
 
     const timestamp = await time.latest();
 
-    const token = await Token.new({ from: SELLER });
+    const token = await Token1155.new({ from: SELLER });
     await token.mint(SELLER, 22, 1, 0, { from: SELLER });
     await token.setApprovalForAll(marketplaceV1.address, true, {
       from: SELLER,
