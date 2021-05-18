@@ -114,6 +114,19 @@ contract NFTMarketplaceV1 is
     }
 
     /**
+     * @dev See {_createOffer}.
+     */
+    function createOffer(
+        address _token,
+        uint256 _tokenId,
+        uint256 _amount,
+        uint256 _deadline,
+        uint256 _priceUSD
+    ) external {
+        _createOffer(_token, _tokenId, _amount, _deadline, _priceUSD);
+    }
+
+    /**
      * @dev Creates an offer of an ERC-1155 Token.
      *
      * Emits a {OfferCreated} event.
@@ -126,13 +139,13 @@ contract NFTMarketplaceV1 is
      * - `_deadline` must be greater than the current `block.timestamp`.
      * - `_priceUSD` must be greater than zero.
      */
-    function createOffer(
+    function _createOffer(
         address _token,
         uint256 _tokenId,
         uint256 _amount,
         uint256 _deadline,
         uint256 _priceUSD
-    ) external {
+    ) internal {
         require(_token != address(0), "NTFMarketplace: ZERO_ADDRESS");
         require(_tokenId > 0, "NTFMarketplace: ID_ERROR");
         require(_amount > 0, "NFTMarketplace: ZERO_AMOUNT");
@@ -159,6 +172,18 @@ contract NFTMarketplaceV1 is
     }
 
     /**
+     * @dev See {_acceptOfferWithTokens}.
+     */
+    function acceptOfferWithTokens(
+        address _seller,
+        uint256 _tokenId,
+        uint256 _amount,
+        address _tokenPayment
+    ) external {
+        _acceptOfferWithTokens(_seller, _tokenId, _amount, _tokenPayment);
+    }
+
+    /**
      * @dev Accepts an offer of an ERC-1155 Token using ERC-20 Tokens.
      *
      * Emits a {OfferAccepted} event.
@@ -171,12 +196,12 @@ contract NFTMarketplaceV1 is
      * - `_tokenPayment` cannot be the zero address and must be a
      * valid ERC-20 Token address.
      */
-    function acceptOfferWithTokens(
+    function _acceptOfferWithTokens(
         address _seller,
         uint256 _tokenId,
         uint256 _amount,
         address _tokenPayment
-    ) external {
+    ) internal {
         require(_seller != address(0), "NTFMarketplace: ZERO_ADDRESS");
         require(_tokenId > 0, "NTFMarketplace: ID_ERROR");
         require(_amount > 0, "NFTMarketplace: ZERO_AMOUNT");
@@ -196,18 +221,20 @@ contract NFTMarketplaceV1 is
 
         uint256 tokenPrice;
         uint256 tokenDecimals = IERC20(_tokenPayment).decimals();
-        
+
         if (tokenDecimals > 8) {
             // the price in USD has 8 decimals,
             // so we calculate the decimals with 10 ** (tokenDecimals - 8)
             // to get to 18 decimals
-            tokenPrice = _getPriceByToken(_tokenPayment).mul(10**(tokenDecimals.sub(8)));
+            tokenPrice = _getPriceByToken(_tokenPayment).mul(
+                10**(tokenDecimals.sub(8))
+            );
         } else {
             // the price in USD has 8 decimals,
             // so we need to get the same decimals that tokenDecimals
             // we calculate that with 8 - tokenDecimals
             uint256 usdDecimals = 8;
-            uint256 priceDivider = 10 ** (usdDecimals.sub(tokenDecimals));
+            uint256 priceDivider = 10**(usdDecimals.sub(tokenDecimals));
             // and divide the token price by that amount
             tokenPrice = _getPriceByToken(_tokenPayment).div(priceDivider);
         }
@@ -257,6 +284,16 @@ contract NFTMarketplaceV1 is
     }
 
     /**
+     * @dev See {_acceptOfferWithETH}
+     */
+    function acceptOfferWithETH(address _seller, uint256 _tokenId)
+        external
+        payable
+    {
+        _acceptOfferWithETH(_seller, _tokenId);
+    }
+
+    /**
      * @dev Accepts an offer of an ERC-1155 Token using ETH.
      *
      * Emits a {OfferAccepted} event.
@@ -266,10 +303,7 @@ contract NFTMarketplaceV1 is
      * - `_seller` cannot be the zero address.
      * - `_tokenId` must be greater than zero.
      */
-    function acceptOfferWithETH(address _seller, uint256 _tokenId)
-        external
-        payable
-    {
+    function _acceptOfferWithETH(address _seller, uint256 _tokenId) internal {
         require(_seller != address(0), "NTFMarketplace: ZERO_ADDRESS");
         require(_tokenId > 0, "NTFMarketplace: ID_ERROR");
 
@@ -329,6 +363,13 @@ contract NFTMarketplaceV1 is
     }
 
     /**
+     * @dev See {_cancelOffer}.
+     */
+    function cancelOffer(uint256 _tokenId) external {
+        _cancelOffer(_tokenId);
+    }
+
+    /**
      * @dev Cancels an offer of an ERC-1155 Token.
      *
      * Emits a {OfferCancelled} event.
@@ -337,7 +378,7 @@ contract NFTMarketplaceV1 is
      *
      * - `_tokenId` must be greater than zero.
      */
-    function cancelOffer(uint256 _tokenId) external {
+    function _cancelOffer(uint256 _tokenId) internal {
         require(_tokenId > 0, "NFTMarketplace: ID_ERROR");
 
         Offer storage offer = offers[_msgSender()][_tokenId];
