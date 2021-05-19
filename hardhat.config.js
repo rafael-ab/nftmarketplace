@@ -20,7 +20,9 @@ module.exports = {
   },
   gasReporter: {
     enabled: (process.env.REPORT_GAS) ? true : false,
-    currency: 'USD'
+    currency: "USD",
+    coinmarketcap: process.env.COINMARKETCAP_API_KEY,
+    excludeContracts: ["utils/", "ERC1155.sol", "ERC721.sol"]
   },
   solidity: {
     compilers: [
