@@ -480,15 +480,15 @@ contract NFTMarketplaceV1 is
      *
      * Requirements:
      *
-     * - `_paymentToken` cannot be the zero address.
+     * - `_tokenPayment` cannot be the zero address.
      * - Only owner can change whether a token is accepted or not.
      */
-    function setWhitelistedPaymentToken(address _paymentToken, bool isAccepted)
+    function setWhitelistedTokenPayment(address _tokenPayment, bool isAccepted)
         external
         onlyOwner
     {
-        require(_paymentToken != address(0), "NFTMarketplace: ZERO_ADDRESS");
-        _whitelistedERC20[_paymentToken] = isAccepted;
+        require(_tokenPayment != address(0), "NFTMarketplace: ZERO_ADDRESS");
+        _whitelistedERC20[_tokenPayment] = isAccepted;
     }
 
     /**

@@ -57,14 +57,14 @@ contract("NFTMarketplaceV2", () => {
     marketplaceV2.initialize(RECIPIENT, 100, { from: ADMIN });
 
     // set whitelist tokens for payments
-    marketplaceV2.setWhitelistedPaymentToken(WETH_ADDRESS, true, {
+    marketplaceV2.setWhitelistedTokenPayment(WETH_ADDRESS, true, {
       from: ADMIN,
     });
     marketplaceV2.setChainlinkUSDToken(WETH_ADDRESS, USD_ETH_ADDRESS, {
       from: ADMIN,
     });
 
-    marketplaceV2.setWhitelistedPaymentToken(DAI_ADDRESS, true, {
+    marketplaceV2.setWhitelistedTokenPayment(DAI_ADDRESS, true, {
       from: ADMIN,
     });
     marketplaceV2.setChainlinkUSDToken(DAI_ADDRESS, USD_DAI_ADDRESS, {

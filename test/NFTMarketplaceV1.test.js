@@ -59,21 +59,21 @@ contract("NFTMarketplaceV1", () => {
     marketplaceV1.initialize(RECIPIENT, 100, { from: ADMIN });
 
     // set whitelist tokens for payments
-    marketplaceV1.setWhitelistedPaymentToken(WETH_ADDRESS, true, {
+    marketplaceV1.setWhitelistedTokenPayment(WETH_ADDRESS, true, {
       from: ADMIN,
     });
     marketplaceV1.setChainlinkUSDToken(WETH_ADDRESS, USD_ETH_ADDRESS, {
       from: ADMIN,
     });
 
-    marketplaceV1.setWhitelistedPaymentToken(DAI_ADDRESS, true, {
+    marketplaceV1.setWhitelistedTokenPayment(DAI_ADDRESS, true, {
       from: ADMIN,
     });
     marketplaceV1.setChainlinkUSDToken(DAI_ADDRESS, USD_DAI_ADDRESS, {
       from: ADMIN,
     });
 
-    marketplaceV1.setWhitelistedPaymentToken(LINK_ADDRESS, true, {
+    marketplaceV1.setWhitelistedTokenPayment(LINK_ADDRESS, true, {
       from: ADMIN,
     });
     marketplaceV1.setChainlinkUSDToken(LINK_ADDRESS, USD_LINK_ADDRESS, {
@@ -480,7 +480,7 @@ contract("NFTMarketplaceV1", () => {
     const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
     const USD_USDC_ADDRESS = "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6";
 
-    marketplaceV1.setWhitelistedPaymentToken(USDC_ADDRESS, true, {
+    marketplaceV1.setWhitelistedTokenPayment(USDC_ADDRESS, true, {
       from: ADMIN,
     });
     marketplaceV1.setChainlinkUSDToken(USDC_ADDRESS, USD_USDC_ADDRESS, {
