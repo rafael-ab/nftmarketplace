@@ -16,7 +16,7 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
     using SafeMath for uint256;
 
     /**
-     * @dev Creates an offer of an ERC-721 Token.
+     * @notice Creates an offer of an ERC-721 Token.
      *
      * Emits a {NFTMarketplaceV1-OfferCreated} event.
      *
@@ -37,7 +37,12 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
     }
 
     /**
-     * @dev See {_acceptOfferERC721WithTokens}.
+     * @notice Accepts an offer of an ERC-721 Token using ERC-20 Tokens.
+     * @dev See {_acceptOfferERC721WithTokens} for more details.
+     * @param _seller Address of the seller
+     * @param _tokenId ID of the token
+     * @param _amount Amount of the token 
+     * @param _tokenPayment Address of the ERC-20 Token
      */
     function acceptOfferERC721WithTokens(
         address _seller,
@@ -144,7 +149,10 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
     }
 
     /**
-     * @dev See {_acceptOfferERC721WithETH}
+     * @notice Accepts an offer of an ERC-721 Token using ETH.
+     * @dev See {_acceptOfferERC721WithETH} for more details.
+     * @param _seller Address of the seller
+     * @param _tokenId ID of the token
      */
     function acceptOfferERC721WithETH(address _seller, uint256 _tokenId)
         external
@@ -155,6 +163,8 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
 
     /**
      * @dev Accepts an offer of an ERC-721 Token using ETH.
+     * @param _seller Address of the seller
+     * @param _tokenId ID of the token
      *
      * Emits a {NFTMarketplaceV1-OfferAccepted} event.
      *

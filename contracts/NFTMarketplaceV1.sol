@@ -35,10 +35,16 @@ contract NFTMarketplaceV1 is
      */
     address payable public feeRecipient;
 
-    // mapping of approved tokens for payment
+    /**
+     * @dev Mapping of approved tokens for payment
+     * @return True if ERC20 Token is allowed.
+     */
     mapping(address => bool) public _whitelistedERC20;
 
-    // mapping of token address for chainlink usd-token address
+    /**
+     * @dev Mapping of token address for chainlink usd-token address
+     * @return Address of the Chainlink Pair Token/USD.
+     */
     mapping(address => address) public _chainlinkUSDToken;
 
     enum OfferStatus {ONGOING, ACCEPTED, CANCELLED}
@@ -54,7 +60,8 @@ contract NFTMarketplaceV1 is
     }
 
     /**
-     * @dev Returns the offer of a seller given a tokenId.
+     * @dev Mapping from address to tokenId which map to an offer
+     * @return The offer of a seller given a tokenId.
      */
     mapping(address => mapping(uint256 => Offer)) public offers;
 
@@ -93,6 +100,8 @@ contract NFTMarketplaceV1 is
 
     /**
      * @dev Initializes the values for {feeRecipient} and {fee}.
+     * @param _feeRecipient Address who is going to hold the fees
+     * @param _fee Value of the fees
      *
      * It is used to make the contract upgradeable.
      *
@@ -114,7 +123,13 @@ contract NFTMarketplaceV1 is
     }
 
     /**
-     * @dev See {_createOffer}.
+     * @notice Creates an offer of an ERC-1155 Token.
+     * @dev See {_createOffer} for more details.
+     * @param _token Address of the ERC-1155 Token
+     * @param _token ID of the token
+     * @param _amount Amount of the token
+     * @param _deadline Time limit that the offer is going to be active 
+     * @param _priceUSD Price of the offer, in USD
      */
     function createOffer(
         address _token,
@@ -128,6 +143,11 @@ contract NFTMarketplaceV1 is
 
     /**
      * @dev Creates an offer of an ERC-1155 Token.
+     * @param _token Address of the ERC-1155 Token
+     * @param _token ID of the token
+     * @param _amount Amount of the token
+     * @param _deadline Time limit that the offer is going to be active 
+     * @param _priceUSD Price of the offer, in USD
      *
      * Emits a {OfferCreated} event.
      *
@@ -172,7 +192,12 @@ contract NFTMarketplaceV1 is
     }
 
     /**
-     * @dev See {_acceptOfferWithTokens}.
+     * @notice Accepts an offer of an ERC-1155 Token using ERC-20 Tokens
+     * @dev See {_acceptOfferWithTokens} for more details.
+     * @param _seller Address of the seller
+     * @param _tokenId ID of the token
+     * @param _amount Amount of the token 
+     * @param _tokenPayment Address of the ERC-20 Token
      */
     function acceptOfferWithTokens(
         address _seller,
@@ -185,6 +210,10 @@ contract NFTMarketplaceV1 is
 
     /**
      * @dev Accepts an offer of an ERC-1155 Token using ERC-20 Tokens.
+     * @param _seller Address of the seller
+     * @param _tokenId ID of the token
+     * @param _amount Amount of the token 
+     * @param _tokenPayment Address of the ERC-20 Token
      *
      * Emits a {OfferAccepted} event.
      *
@@ -284,7 +313,10 @@ contract NFTMarketplaceV1 is
     }
 
     /**
-     * @dev See {_acceptOfferWithETH}
+     * @notice Accepts an offer of an ERC-1155 Token using ETH.
+     * @dev See {_acceptOfferWithETH} for more details.
+     * @param _seller Address of the seller
+     * @param _tokenId ID of the token
      */
     function acceptOfferWithETH(address _seller, uint256 _tokenId)
         external
@@ -295,6 +327,8 @@ contract NFTMarketplaceV1 is
 
     /**
      * @dev Accepts an offer of an ERC-1155 Token using ETH.
+     * @param _seller Address of the seller
+     * @param _tokenId ID of the token
      *
      * Emits a {OfferAccepted} event.
      *
@@ -363,7 +397,9 @@ contract NFTMarketplaceV1 is
     }
 
     /**
-     * @dev See {_cancelOffer}.
+     * @notice Cancels an offer of an ERC-1155 Token.
+     * @dev See {_cancelOffer} for more details.
+     * @param _tokenId ID of the token
      */
     function cancelOffer(uint256 _tokenId) external {
         _cancelOffer(_tokenId);
@@ -371,6 +407,7 @@ contract NFTMarketplaceV1 is
 
     /**
      * @dev Cancels an offer of an ERC-1155 Token.
+     * @param _tokenId ID of the token
      *
      * Emits a {OfferCancelled} event.
      *
