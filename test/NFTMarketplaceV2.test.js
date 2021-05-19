@@ -11,7 +11,6 @@ const {
 // Token Address
 const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-const LINK_ADDRESS = "0x514910771AF9Ca656af840dff83E8264EcF986CA";
 
 // Account Address
 const ADMIN = "0xE92d1A43df510F82C66382592a047d288f85226f";
@@ -23,7 +22,6 @@ const RECIPIENT = "0x9BF4001d307dFd62B26A2F1307ee0C0307632d59";
 // Chainlink Address
 const USD_ETH_ADDRESS = "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419";
 const USD_DAI_ADDRESS = "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9";
-const USD_LINK_ADDRESS = "0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c";
 
 const toWei = (value, type) => web3.utils.toWei(String(value), type);
 const fromWei = (value, type) =>
@@ -73,15 +71,9 @@ contract("NFTMarketplaceV2", () => {
       from: ADMIN,
     });
 
-    marketplaceV2.setWhitelistedPaymentToken(LINK_ADDRESS, true, {
-      from: ADMIN,
-    });
-    marketplaceV2.setChainlinkUSDToken(LINK_ADDRESS, USD_LINK_ADDRESS, {
-      from: ADMIN,
-    });
   });
 
-  it("seller should create an 721 token offer", async () => {
+  it("seller should create a Token721 offer", async () => {
     const timestamp = await time.latest();
 
     const token = await Token721.new({ from: SELLER });
@@ -110,7 +102,7 @@ contract("NFTMarketplaceV2", () => {
     console.log("Gas Used :>> ", tx.receipt.gasUsed);
   });
 
-  it("should accept an 721 token offer using ETH", async () => {
+  it("should accept a Token721 offer using ETH", async () => {
     const timestamp = await time.latest();
 
     const token = await Token721.new({ from: SELLER });
@@ -160,7 +152,7 @@ contract("NFTMarketplaceV2", () => {
     console.log("Gas Used :>> ", tx1.receipt.gasUsed + tx2.receipt.gasUsed);
   });
 
-  it("should accept an offer 721 token using DAI", async () => {
+  it("should accept a Token721 offer using DAI", async () => {
     const timestamp = await time.latest();
 
     const token = await Token721.new({ from: SELLER });
