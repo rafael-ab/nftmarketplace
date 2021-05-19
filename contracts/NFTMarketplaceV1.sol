@@ -431,6 +431,7 @@ contract NFTMarketplaceV1 is
 
     /**
      * @dev Sets the fees of each transaction.
+     * @param _fee Value of the fees
      *
      * Requirements:
      *
@@ -443,6 +444,7 @@ contract NFTMarketplaceV1 is
 
     /**
      * @dev Sets the address who is hold the fees.
+     * @param _feeRecipient Address who is going to hold the fees
      *
      * Requirements:
      *
@@ -455,6 +457,8 @@ contract NFTMarketplaceV1 is
 
     /**
      * @dev Sets the Chainlink address for the USD pair of the token for payment.
+     * @param _tokenPayment Address of the ERC-20 Token
+     * @param _chainlinkAddress Address of the Chailink Pair Token/USD
      *
      * Requirements:
      *
@@ -471,6 +475,8 @@ contract NFTMarketplaceV1 is
 
     /**
      * @dev Sets a whitelist of ERC-20 tokens for payment.
+     * @param _tokenPayment Address of the ERC-20 Token
+     * @param isAccepted True if the ERC-20 Token is allowed to pay
      *
      * Requirements:
      *
@@ -487,6 +493,7 @@ contract NFTMarketplaceV1 is
 
     /**
      * @dev Returns the price of a token in USD.
+     * @param _tokenPayment Address of the ERC-20 Token
      *
      * Requirements:
      *
