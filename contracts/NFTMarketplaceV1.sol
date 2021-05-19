@@ -279,6 +279,8 @@ contract NFTMarketplaceV1 is
             "NTFMarketplace: INSUFFICIENT_ALLOWANCE"
         );
 
+        offer.status = OfferStatus.ACCEPTED;
+
         // transfer tokens to the seller
         IERC20(_tokenPayment).transferFrom(
             _msgSender(),
@@ -302,7 +304,6 @@ contract NFTMarketplaceV1 is
 
         IERC20(_tokenPayment).transferFrom(_msgSender(), feeRecipient, fees);
 
-        offer.status = OfferStatus.ACCEPTED;
         emit OfferAccepted(
             _msgSender(),
             _seller,
@@ -365,6 +366,8 @@ contract NFTMarketplaceV1 is
 
         uint256 fees = finalAmount.div(fee);
 
+        offer.status = OfferStatus.ACCEPTED;
+
         // transfer eth to seller
         payable(_seller).transfer(finalAmount.sub(fees));
 
@@ -380,13 +383,11 @@ contract NFTMarketplaceV1 is
             offer.amount,
             ""
         );
-
         //send fees to the recipient
         payable(feeRecipient).transfer(fees);
         // refund to sender
         payable(_msgSender()).transfer(address(this).balance);
 
-        offer.status = OfferStatus.ACCEPTED;
         emit OfferAccepted(
             _msgSender(),
             _seller,
