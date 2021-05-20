@@ -36,16 +36,14 @@ contract NFTMarketplaceV1 is
     address payable public feeRecipient;
 
     /**
-     * @dev Mapping of approved tokens for payment
-     * @return True if ERC20 Token is allowed.
+     * @dev Returns true if ERC20 Token is allowed for payment.
      */
-    mapping(address => bool) public _whitelistedERC20;
+    mapping(address => bool) internal _whitelistedERC20;
 
     /**
-     * @dev Mapping of token address for chainlink usd-token address
-     * @return Address of the Chainlink Pair Token/USD.
+     * @dev Returns the address of the Chainlink Pair Token/USD.
      */
-    mapping(address => address) public _chainlinkUSDToken;
+    mapping(address => address) internal _chainlinkUSDToken;
 
     enum OfferStatus {ONGOING, ACCEPTED, CANCELLED}
 
