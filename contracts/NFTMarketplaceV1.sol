@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
 import "./interfaces/IERC20.sol";
+import "./libraries/SafeERC20.sol";
 import "hardhat/console.sol";
 
 /**
@@ -24,6 +25,7 @@ contract NFTMarketplaceV1 is
     OwnableUpgradeable
 {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     /**
      * @dev Returns the fee value that is taken from each transaction.
@@ -280,7 +282,7 @@ contract NFTMarketplaceV1 is
         offer.status = OfferStatus.ACCEPTED;
 
         // transfer tokens to the seller
-        IERC20(_tokenPayment).transferFrom(
+        IERC20(_tokenPayment).safeTransferFrom(
             _msgSender(),
             _seller,
             finalAmount.sub(fees)
@@ -300,7 +302,7 @@ contract NFTMarketplaceV1 is
             ""
         );
 
-        IERC20(_tokenPayment).transferFrom(_msgSender(), feeRecipient, fees);
+        IERC20(_tokenPayment).safeTransferFrom(_msgSender(), feeRecipient, fees);
 
         emit OfferAccepted(
             _msgSender(),
