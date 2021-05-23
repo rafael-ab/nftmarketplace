@@ -14,10 +14,6 @@ import "hardhat/console.sol";
 /**
  * @title A NFT Marketplace Contract
  * @author Rafael Romero
- *
- * IMPORTANT: This contract only supports pay with token using ERC-20 Standard.
- * That is, you cannot pay using USDT (Tether) because this token not follows
- * the ERC-20 Standard.
  */
 contract NFTMarketplaceV1 is
     Initializable,
