@@ -338,7 +338,7 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
         );
 
         // transfer tokens to the seller
-        IERC20(_tokenPayment).transferFrom(
+        IERC20(_tokenPayment).safeTransferFrom(
             _msgSender(),
             _seller,
             finalAmount.sub(fees)
@@ -357,7 +357,7 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
             ""
         );
 
-        IERC20(_tokenPayment).transferFrom(_msgSender(), feeRecipient, fees);
+        IERC20(_tokenPayment).safeTransferFrom(_msgSender(), feeRecipient, fees);
 
         emit OfferAccepted(_msgSender(), _seller, _tokenId, 1, offer.priceUSD);
     }
