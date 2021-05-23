@@ -15,7 +15,7 @@ _You need to have installed nodejs_
 _First you need to clone this repository_
 
 ```
-git clone https://github.com/raerocor97/nftmarketplace/
+git clone https://github.com/rafius97/nftmarketplace/
 ```
 
 _Make sure you are in the right folder_
@@ -59,7 +59,7 @@ npm run test
 
 ## Author ✒️
 
-- **Rafael Romero** - [raerocor97](https://github.com/raerocor97)
+- **Rafael Romero** - [rafius97](https://github.com/rafius97)
 
 ## License 📄
 
