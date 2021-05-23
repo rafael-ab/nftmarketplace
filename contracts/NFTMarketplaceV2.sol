@@ -67,9 +67,12 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
     ) internal {
         require(_seller != address(0), "NTFMarketplace: ZERO_ADDRESS");
         require(_buyerNFTAddress != address(0), "NFTMarketplace: ZERO_ADDRESS");
-        require(_tokenPayment != address(0), "NFTMarketplace: ZERO_ADDRESS");
         require(_sellerTokenId > 0, "NTFMarketplace: ID_ERROR");
         require(_buyerTokenId > 0, "NFTMarketplace: ID_ERROR");
+        require(
+            _whitelistedERC20[_tokenPayment],
+            "NFTMarketplace: TOKEN_NOT_ALLOWED"
+        );
 
         Offer storage offer = offers[_seller][_sellerTokenId];
         if (offer.deadline < block.timestamp) {
@@ -183,8 +186,14 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
         uint256 _buyerTokenId,
         address _tokenPayment
     ) internal returns (bool) {
-        require(_buyerNFTAddress != address(0), "NTFMarketplace: ZERO_ADDRESS");
-        require(_buyerTokenId > 0, "NTFMarketplace: ID_ERROR");
+        require(_seller != address(0), "NTFMarketplace: ZERO_ADDRESS");
+        require(_buyerNFTAddress != address(0), "NFTMarketplace: ZERO_ADDRESS");
+        require(_sellerTokenId > 0, "NTFMarketplace: ID_ERROR");
+        require(_buyerTokenId > 0, "NFTMarketplace: ID_ERROR");
+        require(
+            _whitelistedERC20[_tokenPayment],
+            "NFTMarketplace: TOKEN_NOT_ALLOWED"
+        );
 
         Offer memory _offer = offers[_seller][_sellerTokenId];
 
