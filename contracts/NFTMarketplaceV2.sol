@@ -16,7 +16,7 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
     using SafeERC20 for IERC20;
 
     /**
-     * @notice Accepts an offer of an ERC-1155 Token using NFT-721.
+     * @notice Accepts an offer of an ERC-1155 Token using NFT.
      * @param _seller Address of the seller
      * @param _sellerTokenId ID of the token of the seller
      * @param _buyerNFTAddress Address of the buyer NFT provider
@@ -40,7 +40,7 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
     }
 
     /**
-     * @dev Accepts an offer of an ERC-1155 Token using NFT-721.
+     * @dev Accepts an offer of an ERC-1155 Token using NFT.
      * @param _seller Address of the seller
      * @param _sellerTokenId ID of the token of the seller
      * @param _buyerNFTAddress Address of the buyer NFT provider
