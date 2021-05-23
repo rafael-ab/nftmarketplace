@@ -474,4 +474,114 @@ contract("NFTMarketplaceV2", () => {
 
     console.log("Gas Used :>> ", tx1.receipt.gasUsed + tx2.receipt.gasUsed);
   });
+
+  it("should accept a Token1155 offer using NFT1155 and seller receives DAI tokens", async () => {
+    // Meme LTD Address
+    const NFT_ADDRESS = "0xe4605d46Fd0B3f8329d936a8b258D69276cBa264";
+    const NFT_OWNER = "0xB485176d26BEEC3CB02A835c0c8B93A9DBF83793";
+    const NFT_ID = "175";
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [NFT_OWNER],
+    });
+
+    const timestamp = await time.latest();
+
+    const token = await Token1155.new({ from: SELLER });
+    await token.mint(SELLER, 1254, 1, 0, { from: SELLER });
+    await token.setApprovalForAll(marketplaceV2.address, true, {
+      from: SELLER,
+    });
+
+    const daiToken = await IERC20.at(DAI_ADDRESS);
+    const balanceDaiBefore = await daiToken.balanceOf(SELLER);
+    console.log(
+      "SELLER DAI Balance Before :>> ",
+      fromWei(balanceDaiBefore, "ether")
+    );
+    console.log(
+      "BUYER DAI Balance Before :>> ",
+      fromWei(await daiToken.balanceOf(NFT_OWNER), "ether")
+    );
+    console.log(
+      "SELLER Token 1254 Balance :>> ",
+      String(await token.balanceOf(SELLER, 1254))
+    );
+    console.log(
+      "BUYER Token 1254 Balance :>> ",
+      String(await token.balanceOf(NFT_OWNER, 1254))
+    );
+
+    const tx1 = await marketplaceV2.createOffer(
+      token.address,
+      toBN(1254),
+      1,
+      timestamp + 1,
+      toBN(10),
+      { from: SELLER }
+    );
+
+    await expectEvent(tx1, "OfferCreated", {
+      seller: SELLER,
+      token: token.address,
+      tokenId: toBN(1254),
+      amount: toBN(1),
+      deadline: timestamp + 1,
+      priceUSD: toBN(10),
+    });
+
+    // send some funds to pay fees for tx
+    await web3.eth.sendTransaction({
+      from: BUYER_ETH,
+      to: NFT_OWNER,
+      value: toWei(1, "ether"),
+    });
+
+    const token1155 = await Token1155.at(NFT_ADDRESS);
+    await token1155.setApprovalForAll(marketplaceV2.address, true, {
+      from: NFT_OWNER
+    });
+
+    const tx2 = await marketplaceV2.acceptOfferWithNFT(
+      SELLER,
+      1254,
+      NFT_ADDRESS,
+      NFT_ID,
+      DAI_ADDRESS,
+      { from: NFT_OWNER }
+    );
+
+    await expectEvent(tx2, "OfferAccepted", {
+      buyer: NFT_OWNER,
+      seller: SELLER,
+      tokenId: toBN(1254),
+      amount: toBN(1),
+      priceUSD: toBN(10),
+    });
+
+    console.log("-------------------------------------------------");
+    console.log(
+      "SELLER DAI Balance After :>> ",
+      fromWei(await daiToken.balanceOf(SELLER), "ether")
+    );
+    console.log(
+      "SELLER DAI amount paid :>> ",
+      fromWei(await daiToken.balanceOf(SELLER) - balanceDaiBefore, "ether")
+    );
+    console.log(
+      "BUYER DAI Balance After :>> ",
+      fromWei(await daiToken.balanceOf(NFT_OWNER), "ether")
+    );
+    console.log(
+      "SELLER Token 1254 Balance :>> ",
+      String(await token.balanceOf(SELLER, 1254))
+    );
+    console.log(
+      "BUYER Token 1254 Balance :>> ",
+      String(await token.balanceOf(NFT_OWNER, 1254))
+    );
+
+    console.log("Gas Used :>> ", tx1.receipt.gasUsed + tx2.receipt.gasUsed);
+  });
 });
