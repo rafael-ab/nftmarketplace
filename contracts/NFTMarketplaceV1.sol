@@ -124,7 +124,7 @@ contract NFTMarketplaceV1 is
      * @param _token Address of the ERC-1155 Token
      * @param _token ID of the token
      * @param _amount Amount of the token
-     * @param _deadline Time limit that the offer is going to be active 
+     * @param _deadline Time limit that the offer is going to be active
      * @param _priceUSD Price of the offer, in USD
      */
     function createOffer(
@@ -142,7 +142,7 @@ contract NFTMarketplaceV1 is
      * @param _token Address of the ERC-1155 Token
      * @param _token ID of the token
      * @param _amount Amount of the token
-     * @param _deadline Time limit that the offer is going to be active 
+     * @param _deadline Time limit that the offer is going to be active
      * @param _priceUSD Price of the offer, in USD
      *
      * Emits a {OfferCreated} event.
@@ -192,7 +192,7 @@ contract NFTMarketplaceV1 is
      * @dev See {_acceptOfferWithTokens} for more details.
      * @param _seller Address of the seller
      * @param _tokenId ID of the token
-     * @param _amount Amount of the token 
+     * @param _amount Amount of the token
      * @param _tokenPayment Address of the ERC-20 Token
      */
     function acceptOfferWithTokens(
@@ -208,7 +208,7 @@ contract NFTMarketplaceV1 is
      * @dev Accepts an offer of an ERC-1155 Token using ERC-20 Tokens.
      * @param _seller Address of the seller
      * @param _tokenId ID of the token
-     * @param _amount Amount of the token 
+     * @param _amount Amount of the token
      * @param _tokenPayment Address of the ERC-20 Token
      *
      * Emits a {OfferAccepted} event.
@@ -244,30 +244,8 @@ contract NFTMarketplaceV1 is
             "NFTMarketplace: This offer is already cancelled or accepted"
         );
 
-        uint256 tokenPrice;
-        uint256 tokenDecimals = IERC20(_tokenPayment).decimals();
-
-        if (tokenDecimals > 8) {
-            // the price in USD has 8 decimals,
-            // so we calculate the decimals with 10 ** (tokenDecimals - 8)
-            // to get to 18 decimals
-            tokenPrice = _getPriceByToken(_tokenPayment).mul(
-                10**(tokenDecimals.sub(8))
-            );
-        } else {
-            // the price in USD has 8 decimals,
-            // so we need to get the same decimals that tokenDecimals
-            // we calculate that with 8 - tokenDecimals
-            uint256 usdDecimals = 8;
-            uint256 priceDivider = 10**(usdDecimals.sub(tokenDecimals));
-            // and divide the token price by that amount
-            tokenPrice = _getPriceByToken(_tokenPayment).div(priceDivider);
-        }
-        // multiply tokenDecimals by 2 to maintain precision in the next divide
-        uint256 priceUSD = offer.priceUSD.mul(10**(tokenDecimals * 2));
-
-        uint256 finalAmount = priceUSD.div(tokenPrice);
-        uint256 fees = finalAmount.div(fee);
+        (uint256 finalAmount, uint256 fees) =
+            _calculateFinalAmountAndFeesByToken(offer.priceUSD, _tokenPayment);
 
         require(
             IERC20(_tokenPayment).allowance(_msgSender(), address(this)) >=
@@ -298,7 +276,11 @@ contract NFTMarketplaceV1 is
             ""
         );
 
-        IERC20(_tokenPayment).safeTransferFrom(_msgSender(), feeRecipient, fees);
+        IERC20(_tokenPayment).safeTransferFrom(
+            _msgSender(),
+            feeRecipient,
+            fees
+        );
 
         emit OfferAccepted(
             _msgSender(),
@@ -350,17 +332,9 @@ contract NFTMarketplaceV1 is
             "NFTMarketplace: This offer is already cancelled or accepted"
         );
 
-        address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-
-        // the price in USD has 8 decimals, so multiply by 10 ** 10 to get to 18 decimals
-        uint256 tokenPrice = _getPriceByToken(weth).mul(10**10);
-        // add 18 twice to maintain precision in the next divide
-        uint256 priceUSD = offer.priceUSD.mul(10**(18 + 18));
-
-        uint256 finalAmount = priceUSD.div(tokenPrice);
+        (uint256 finalAmount, uint256 fees) =
+            _calculateFinalAmountAndFeesWithETH(offer.priceUSD);
         require(amount >= finalAmount, "NFTMarketplace: INSUFFICIENT_AMOUNT");
-
-        uint256 fees = finalAmount.div(fee);
 
         offer.status = OfferStatus.ACCEPTED;
 
@@ -514,5 +488,78 @@ contract NFTMarketplaceV1 is
         (, int256 price, , , ) = priceToken.latestRoundData();
 
         return uint256(price);
+    }
+
+    /**
+     * @dev Calculate the final amount and fees in tokens.
+     * @param _priceUSD Price value in USD
+     * @param _tokenPayment Address of the ERC-20 Token for payment
+     *
+     * Requirements:
+     *
+     * - `_priceUSD` must be greater than zero.
+     * - `_tokenPayment` cannot be the zero address and address must be
+     * in the whitelist of ERC-20 Tokens.
+     */
+    function _calculateFinalAmountAndFeesByToken(
+        uint256 _priceUSD,
+        address _tokenPayment
+    ) internal returns (uint256 finalAmount, uint256 fees) {
+        require(_priceUSD > 0, "NFTMarketplace: PRICE_ERROR");
+        require(
+            _whitelistedERC20[_tokenPayment],
+            "NFTMarketplace: TOKEN_NOT_ALLOWED"
+        );
+
+        uint256 tokenPrice;
+        uint256 tokenDecimals = IERC20(_tokenPayment).decimals();
+
+        if (tokenDecimals > 8) {
+            // the price in USD has 8 decimals,
+            // so we calculate the decimals with 10 ** (tokenDecimals - 8)
+            // to get to 18 decimals
+            tokenPrice = _getPriceByToken(_tokenPayment).mul(
+                10**(tokenDecimals.sub(8))
+            );
+        } else {
+            // the price in USD has 8 decimals,
+            // so we need to get the same decimals that tokenDecimals
+            // we calculate that with 8 - tokenDecimals
+            uint256 usdDecimals = 8;
+            uint256 priceDivider = 10**(usdDecimals.sub(tokenDecimals));
+            // and divide the token price by that amount
+            tokenPrice = _getPriceByToken(_tokenPayment).div(priceDivider);
+        }
+        // multiply tokenDecimals by 2 to maintain precision in the next divide
+        uint256 priceUSD = _priceUSD.mul(10**(tokenDecimals * 2));
+
+        finalAmount = priceUSD.div(tokenPrice);
+        fees = finalAmount.div(fee);
+    }
+
+    /**
+     * @dev Calculate the final amount and fees in ETH.
+     * @param _priceUSD Price value in USD
+     *
+     * Requirements:
+     *
+     * - `_priceUSD` must be greater than zero.
+     */
+    function _calculateFinalAmountAndFeesWithETH(uint256 _priceUSD)
+        internal
+        returns (uint256 finalAmount, uint256 fees)
+    {
+        require(_priceUSD > 0, "NFTMarketplace: PRICE_ERROR");
+
+        // the price in USD has 8 decimals, so multiply by 10 ** 10 to get to 18 decimals
+        uint256 tokenPrice =
+            _getPriceByToken(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2).mul(
+                10**10
+            );
+        // add 18 twice to maintain precision in the next divide
+        uint256 priceUSD = _priceUSD.mul(10**(18 + 18));
+
+        finalAmount = priceUSD.div(tokenPrice);
+        fees = finalAmount.div(fee);
     }
 }

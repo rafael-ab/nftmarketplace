@@ -82,55 +82,30 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
             offer.status == OfferStatus.ONGOING,
             "NFTMarketplace: This offer is already cancelled or accepted"
         );
-        
+
         // swap in NFT20 an NFT to Tokens
-        bool success = _swapNFTToTokens(
-            _seller,
-            _sellerTokenId,
-            _buyerNFTAddress, 
-            _buyerTokenId,
-            _tokenPayment
-        );
+        bool success =
+            _swapNFTToTokens(
+                _seller,
+                _sellerTokenId,
+                _buyerNFTAddress,
+                _buyerTokenId,
+                _tokenPayment
+            );
         require(success, "NFTMarketplace: NFT_SWAP_ERROR");
 
-        uint256 tokenPrice;
-        uint256 tokenDecimals = IERC20(_tokenPayment).decimals();
-
-        if (tokenDecimals > 8) {
-            // the price in USD has 8 decimals,
-            // so we calculate the decimals with 10 ** (tokenDecimals - 8)
-            // to get to 18 decimals
-            tokenPrice = _getPriceByToken(_tokenPayment).mul(
-                10**(tokenDecimals.sub(8))
-            );
-        } else {
-            // the price in USD has 8 decimals,
-            // so we need to get the same decimals that tokenDecimals
-            // we calculate that with 8 - tokenDecimals
-            uint256 usdDecimals = 8;
-            uint256 priceDivider = 10**(usdDecimals.sub(tokenDecimals));
-            // and divide the token price by that amount
-            tokenPrice = _getPriceByToken(_tokenPayment).div(priceDivider);
-        }
-        // multiply tokenDecimals by 2 to maintain precision in the next divide
-        uint256 priceUSD = offer.priceUSD.mul(10**(tokenDecimals * 2));
-
-        uint256 finalAmount = priceUSD.div(tokenPrice);
-        uint256 fees = finalAmount.div(fee);
+        (uint256 finalAmount, uint256 fees) =
+            _calculateFinalAmountAndFeesByToken(offer.priceUSD, _tokenPayment);
 
         require(
-            IERC20(_tokenPayment).balanceOf(address(this)) >=
-                finalAmount,
+            IERC20(_tokenPayment).balanceOf(address(this)) >= finalAmount,
             "NTFMarketplace: INSUFFICIENT_AMOUNT"
         );
 
         offer.status = OfferStatus.ACCEPTED;
 
         // transfer tokens to the seller
-        IERC20(_tokenPayment).safeTransfer(
-            _seller,
-            finalAmount.sub(fees)
-        );
+        IERC20(_tokenPayment).safeTransfer(_seller, finalAmount.sub(fees));
 
         require(
             IERC1155(offer.token).isApprovedForAll(_seller, address(this)),
@@ -149,7 +124,7 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
         IERC20(_tokenPayment).safeTransfer(feeRecipient, fees);
 
         IERC20(_tokenPayment).safeTransfer(
-            _msgSender(), 
+            _msgSender(),
             IERC20(_tokenPayment).balanceOf(address(this))
         );
 
@@ -197,7 +172,8 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
 
         Offer memory _offer = offers[_seller][_sellerTokenId];
 
-        INFT20Factory factory = INFT20Factory(0x0f4676178b5c53Ae0a655f1B19A96387E4b8B5f2);
+        INFT20Factory factory =
+            INFT20Factory(0x0f4676178b5c53Ae0a655f1B19A96387E4b8B5f2);
         address nftAddress = factory.nftToToken(_buyerNFTAddress);
         require(nftAddress != address(0), "NFTMarketplace: NFT20_ZERO_ADDRESS");
 
@@ -206,19 +182,24 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
             require(_offer.tokenId > 0, "NTFMarketplace: ID_ERROR");
             require(_offer.amount > 0, "NFTMarketplace: ZERO_AMOUNT");
             IERC1155(_buyerNFTAddress).safeTransferFrom(
-                _msgSender(), 
-                nftAddress, 
-                _buyerTokenId, 
-                1, 
+                _msgSender(),
+                nftAddress,
+                _buyerTokenId,
+                1,
                 ""
             );
         } else {
-            IERC721(_buyerNFTAddress).safeTransferFrom(_msgSender(), nftAddress, _buyerTokenId);
+            IERC721(_buyerNFTAddress).safeTransferFrom(
+                _msgSender(),
+                nftAddress,
+                _buyerTokenId
+            );
         }
 
         uint256 balance = IERC20(nftAddress).balanceOf(address(this));
 
-        IUniswapV2Router router = IUniswapV2Router(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+        IUniswapV2Router router =
+            IUniswapV2Router(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
 
         IERC20(nftAddress).approve(address(router), balance);
         // path is nftAddress => WETH => _tokenPayment
@@ -264,7 +245,7 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
      * @dev See {_acceptOfferERC721WithTokens} for more details.
      * @param _seller Address of the seller
      * @param _tokenId ID of the token
-     * @param _amount Amount of the token 
+     * @param _amount Amount of the token
      * @param _tokenPayment Address of the ERC-20 Token
      */
     function acceptOfferERC721WithTokens(
@@ -313,30 +294,8 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
             "NFTMarketplace: This offer is already cancelled or accepted"
         );
 
-        uint256 tokenPrice;
-        uint256 tokenDecimals = IERC20(_tokenPayment).decimals();
-
-        if (tokenDecimals > 8) {
-            // the price in USD has 8 decimals,
-            // so we calculate the decimals with 10 ** (tokenDecimals - 8)
-            // to get to 18 decimals
-            tokenPrice = _getPriceByToken(_tokenPayment).mul(
-                10**(tokenDecimals.sub(8))
-            );
-        } else {
-            // the price in USD has 8 decimals,
-            // so we need to get the same decimals that tokenDecimals
-            // we calculate that with 8 - tokenDecimals
-            uint256 usdDecimals = 8;
-            uint256 priceDivider = 10**(usdDecimals.sub(tokenDecimals));
-            // and divide the token price by that amount
-            tokenPrice = _getPriceByToken(_tokenPayment).div(priceDivider);
-        }
-        // multiply tokenDecimals by 2 to maintain precision in the next divide
-        uint256 priceUSD = offer.priceUSD.mul(10**(tokenDecimals * 2));
-
-        uint256 finalAmount = priceUSD.div(tokenPrice);
-        uint256 fees = finalAmount.div(fee);
+        (uint256 finalAmount, uint256 fees) =
+            _calculateFinalAmountAndFeesByToken(offer.priceUSD, _tokenPayment);
 
         offer.status = OfferStatus.ACCEPTED;
 
@@ -366,7 +325,11 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
             ""
         );
 
-        IERC20(_tokenPayment).safeTransferFrom(_msgSender(), feeRecipient, fees);
+        IERC20(_tokenPayment).safeTransferFrom(
+            _msgSender(),
+            feeRecipient,
+            fees
+        );
 
         emit OfferAccepted(_msgSender(), _seller, _tokenId, 1, offer.priceUSD);
     }
@@ -415,17 +378,9 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
             "NFTMarketplace: This offer is already cancelled or accepted"
         );
 
-        address weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-
-        // the price in USD has 8 decimals, so multiply by 10 ** 10 to get to 18 decimals
-        uint256 tokenPrice = _getPriceByToken(weth).mul(10**10);
-        // add 18 twice to maintain precision in the next divide
-        uint256 priceUSD = offer.priceUSD.mul(10**(18 + 18));
-
-        uint256 finalAmount = priceUSD.div(tokenPrice);
+        (uint256 finalAmount, uint256 fees) =
+            _calculateFinalAmountAndFeesWithETH(offer.priceUSD);
         require(amount >= finalAmount, "NFTMarketplace: INSUFFICIENT_AMOUNT");
-
-        uint256 fees = finalAmount.div(fee);
 
         offer.status = OfferStatus.ACCEPTED;
 
