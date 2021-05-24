@@ -7,6 +7,7 @@ const {
   expectEvent,
   expectRevert,
   time,
+  constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
 
 // Token Address
@@ -433,6 +434,9 @@ contract("NFTMarketplaceV2", () => {
       from: NFT_OWNER,
     });
 
+    const token20 = await IERC20.at(DAI_ADDRESS);
+    await token20.approve(marketplaceV2.address, MAX_UINT256, {from: NFT_OWNER});
+
     const tx2 = await marketplaceV2.acceptOfferWithNFT(
       SELLER,
       1254,
@@ -542,6 +546,9 @@ contract("NFTMarketplaceV2", () => {
     await token1155.setApprovalForAll(marketplaceV2.address, true, {
       from: NFT_OWNER
     });
+
+    const token20 = await IERC20.at(DAI_ADDRESS);
+    await token20.approve(marketplaceV2.address, MAX_UINT256, {from: NFT_OWNER});
 
     const tx2 = await marketplaceV2.acceptOfferWithNFT(
       SELLER,

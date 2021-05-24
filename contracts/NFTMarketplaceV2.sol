@@ -30,59 +30,6 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
         uint256 _buyerTokenId,
         address _tokenPayment
     ) external {
-        _acceptOfferWithNFT(
-            _seller,
-            _sellerTokenId,
-            _buyerNFTAddress,
-            _buyerTokenId,
-            _tokenPayment
-        );
-    }
-
-    /**
-     * @dev Accepts an offer of an ERC-1155 Token using NFT.
-     * @param _seller Address of the seller
-     * @param _sellerTokenId ID of the token of the seller
-     * @param _buyerNFTAddress Address of the buyer NFT provider
-     * @param _buyerTokenId ID of the token of the buyer for payment
-     * @param _tokenPayment Address of the ERC-20 Token
-     *
-     * Emits a {NFTMarketplaceV1-OfferAccepted} event.
-     *
-     * Requirements:
-     *
-     * - `_seller` cannot be the zero address.
-     * - `_sellerTokenId` must be greater than zero.
-     * - `_buyerNFTAddress` cannot be the zero address.
-     * - `_buyerTokenId` must be greater than zero.
-     * - `_tokenPayment` cannot be the zero address and must be a
-     * valid ERC-20 Token address.
-     */
-    function _acceptOfferWithNFT(
-        address _seller,
-        uint256 _sellerTokenId,
-        address _buyerNFTAddress,
-        uint256 _buyerTokenId,
-        address _tokenPayment
-    ) internal {
-        require(_seller != address(0), "NTFMarketplace: ZERO_ADDRESS");
-        require(_buyerNFTAddress != address(0), "NFTMarketplace: ZERO_ADDRESS");
-        require(_sellerTokenId > 0, "NTFMarketplace: ID_ERROR");
-        require(_buyerTokenId > 0, "NFTMarketplace: ID_ERROR");
-        require(
-            _whitelistedERC20[_tokenPayment],
-            "NFTMarketplace: TOKEN_NOT_ALLOWED"
-        );
-
-        Offer storage offer = offers[_seller][_sellerTokenId];
-        if (offer.deadline < block.timestamp) {
-            offer.status = OfferStatus.CANCELLED;
-        }
-        require(
-            offer.status == OfferStatus.ONGOING,
-            "NFTMarketplace: This offer is already cancelled or accepted"
-        );
-
         // swap in NFT20 an NFT to Tokens
         bool success =
             _swapNFTToTokens(
@@ -93,47 +40,10 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
                 _tokenPayment
             );
         require(success, "NFTMarketplace: NFT_SWAP_ERROR");
-
-        (uint256 finalAmount, uint256 fees) =
-            _calculateFinalAmountAndFeesByToken(offer.priceUSD, _tokenPayment);
-
-        require(
-            IERC20(_tokenPayment).balanceOf(address(this)) >= finalAmount,
-            "NTFMarketplace: INSUFFICIENT_AMOUNT"
-        );
-
-        offer.status = OfferStatus.ACCEPTED;
-
-        // transfer tokens to the seller
-        IERC20(_tokenPayment).safeTransfer(_seller, finalAmount.sub(fees));
-
-        require(
-            IERC1155(offer.token).isApprovedForAll(_seller, address(this)),
-            "NTFMarketplace: NOT_APPROVAL"
-        );
-
-        // transfer tokens to buyer
-        IERC1155(offer.token).safeTransferFrom(
-            _seller,
-            _msgSender(),
-            offer.tokenId,
-            offer.amount,
-            ""
-        );
-
-        IERC20(_tokenPayment).safeTransfer(feeRecipient, fees);
-
-        IERC20(_tokenPayment).safeTransfer(
-            _msgSender(),
-            IERC20(_tokenPayment).balanceOf(address(this))
-        );
-
-        emit OfferAccepted(
-            _msgSender(),
+        _acceptOfferWithTokens(
             _seller,
             _sellerTokenId,
-            offer.amount,
-            offer.priceUSD
+            _tokenPayment
         );
     }
 
@@ -212,7 +122,7 @@ contract NFTMarketplaceV2 is NFTMarketplaceV1 {
             balance,
             1,
             path,
-            address(this),
+            _msgSender(),
             _offer.deadline
         );
 
