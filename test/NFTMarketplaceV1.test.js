@@ -265,7 +265,6 @@ contract("NFTMarketplaceV1", () => {
     const tx2 = await marketplaceV1.acceptOfferWithTokens(
       SELLER,
       1254,
-      toWei(3000, "ether"), // DAI and ETH have the same decimals (18)
       DAI_ADDRESS,
       { from: BUYER_TOKEN }
     );
@@ -341,7 +340,6 @@ contract("NFTMarketplaceV1", () => {
     const tx2 = await marketplaceV1.acceptOfferWithTokens(
       SELLER,
       12548,
-      toWei(100, "ether"), // LINK and ETH have the same decimals (18)
       LINK_ADDRESS,
       { from: BUYER_TOKEN }
     );
@@ -418,7 +416,6 @@ contract("NFTMarketplaceV1", () => {
       marketplaceV1.acceptOfferWithTokens(
         SELLER,
         12548,
-        toWei(100, "ether"), // LINK and ETH have the same decimals (18)
         LINK_ADDRESS,
         { from: BUYER_TOKEN }
       ),
@@ -459,7 +456,6 @@ contract("NFTMarketplaceV1", () => {
     await marketplaceV1.acceptOfferWithTokens(
       SELLER,
       12548,
-      toWei(100, "ether"), // LINK and ETH have the same decimals (18)
       LINK_ADDRESS,
       { from: BUYER_TOKEN }
     );
@@ -468,7 +464,6 @@ contract("NFTMarketplaceV1", () => {
       marketplaceV1.acceptOfferWithTokens(
         SELLER,
         12548,
-        toWei(100, "ether"), // LINK and ETH have the same decimals (18)
         LINK_ADDRESS,
         { from: BUYER_TOKEN }
       ),
@@ -537,7 +532,6 @@ contract("NFTMarketplaceV1", () => {
     const tx2 = await marketplaceV1.acceptOfferWithTokens(
       SELLER,
       22,
-      3000 * 10 ** 6, // USDC and ETH have different decimals (6 and 18)
       USDC_ADDRESS,
       { from: BUYER_TOKEN }
     );
@@ -623,7 +617,6 @@ contract("NFTMarketplaceV1", () => {
     const tx2 = await marketplaceV1.acceptOfferWithTokens(
       SELLER,
       22,
-      3000 * 10 ** 6, // USDT and ETH have different decimals (6 and 18)
       USDT_ADDRESS,
       { from: BUYER_TOKEN }
     );

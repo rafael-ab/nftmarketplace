@@ -192,23 +192,20 @@ contract NFTMarketplaceV1 is
      * @dev See {_acceptOfferWithTokens} for more details.
      * @param _seller Address of the seller
      * @param _tokenId ID of the token
-     * @param _amount Amount of the token
      * @param _tokenPayment Address of the ERC-20 Token
      */
     function acceptOfferWithTokens(
         address _seller,
         uint256 _tokenId,
-        uint256 _amount,
         address _tokenPayment
     ) external {
-        _acceptOfferWithTokens(_seller, _tokenId, _amount, _tokenPayment);
+        _acceptOfferWithTokens(_seller, _tokenId, _tokenPayment);
     }
 
     /**
      * @dev Accepts an offer of an ERC-1155 Token using ERC-20 Tokens.
      * @param _seller Address of the seller
      * @param _tokenId ID of the token
-     * @param _amount Amount of the token
      * @param _tokenPayment Address of the ERC-20 Token
      *
      * Emits a {OfferAccepted} event.
@@ -217,19 +214,16 @@ contract NFTMarketplaceV1 is
      *
      * - `_seller` cannot be the zero address.
      * - `_tokenId` must be greater than zero.
-     * - `_amount` must be greater than zero.
      * - `_tokenPayment` cannot be the zero address and must be a
      * valid ERC-20 Token address.
      */
     function _acceptOfferWithTokens(
         address _seller,
         uint256 _tokenId,
-        uint256 _amount,
         address _tokenPayment
     ) internal {
         require(_seller != address(0), "NTFMarketplace: ZERO_ADDRESS");
         require(_tokenId > 0, "NTFMarketplace: ID_ERROR");
-        require(_amount > 0, "NFTMarketplace: ZERO_AMOUNT");
         require(
             _whitelistedERC20[_tokenPayment],
             "NFTMarketplace: TOKEN_NOT_ALLOWED"
