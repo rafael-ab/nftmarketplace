@@ -276,6 +276,11 @@ contract NFTMarketplaceV1 is
             fees
         );
 
+        require(
+            IERC20(_tokenPayment).balanceOf(address(this)) == 0,
+            "NFTMarketplace: TRANSFER_ERROR"
+        );
+
         emit OfferAccepted(
             _msgSender(),
             _seller,
